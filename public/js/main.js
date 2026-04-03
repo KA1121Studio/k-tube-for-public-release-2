@@ -1205,7 +1205,10 @@ function renderHistory() {
     card.className = 'card';
     card.innerHTML = `
       <div class="thumb" data-vid="${item.videoId}">
-        <img src="${item.thumbnail}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.src='https://via.placeholder.com/320x180?text=No+Thumb';">
+        <img src="https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg"
+     alt="${escapeHtml(item.title)}"
+     loading="lazy"
+     onerror="this.src='https://via.placeholder.com/320x180?text=No+Thumb';">
       </div>
       <div class="meta">
         <div class="info">
