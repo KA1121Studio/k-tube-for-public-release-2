@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Video Player - K-tube</title>
+  
+  <!-- CSSを外部ファイルに移動 -->
+  <link rel="stylesheet" href="css/watch.css">
+</head>
+<body>
+<div id="player-container">
+  <video id="video" controls playsinline></video>
+  <audio id="audio" style="display:none"></audio>
+  <div id="loading">読み込み中...</div>
+  <div id="error-message"></div>
+</div>
+
+<script src="js/playwatch.js"></script>
+</body>
+</html>
