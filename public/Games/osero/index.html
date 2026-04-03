@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>オセロ</title>
+<style>
+body{
+  margin:0;
+  background:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+  canvas{
+    background:#0a7a0a;
+    display:block;
+  }
+#msg{
+  margin-top:10px;
+  font-weight:bold;
+  font-size:18px;
+  color:black;
+}
+</style>
+</head>
+<body>
+
+<canvas id="board"></canvas>
+<div id="msg"></div>
+
+<script>
+const canvas=document.getElementById("board");
+const ctx=canvas.getContext("2d");
+
+const SIZE=8;
+let CELL;
+
+let board=[];
+let turn=1; // 1=黒(あなた), -1=白(CPU)
+let lastAIMove=null;
+
+function resizeBoard(){
+  const size=Math.min(window.innerWidth,window.innerHeight)*0.9;
+  canvas.width=size;
+  canvas.height=size;
+  CELL=size/SIZE;
+}
+
+function init(){
+  resizeBoard();
+
+  for(let y=0;y<SIZE;y++){
+    board[y]=[];
+    for(let x=0;x<SIZE;x++){
+      board[y][x]=0;
+    }
+  }
+
+  board[3][3]=-1;
+  board[3][4]=1;
+  board[4][3]=1;
+  board[4][4]=-1;
+
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let y=0;y<SIZE;y++){
+    for(let x=0;x<SIZE;x++){
+ctx.lineWidth = 1;
+ctx.strokeStyle = "black";
+
+for(let i=0;i<=SIZE;i++){
+
+  // 横線
+  ctx.beginPath();
+  ctx.moveTo(0, i*CELL + 0.5);
+  ctx.lineTo(canvas.width, i*CELL + 0.5);
+  ctx.stroke();
+
+  // 縦線
+  ctx.beginPath();
+  ctx.moveTo(i*CELL + 0.5, 0);
+  ctx.lineTo(i*CELL + 0.5, canvas.height);
+  ctx.stroke();
+}
+
+      if(board[y][x]!==0){
+        ctx.beginPath();
+        ctx.arc(
+          x*CELL+CELL/2,
+          y*CELL+CELL/2,
+          CELL*0.4,
+          0,Math.PI*2
+        );
+        ctx.fillStyle=board[y][x]===1?"black":"white";
+        ctx.fill();
+      }
+    }
+  }
+
+  if(lastAIMove){
+    ctx.save();
+    const x=lastAIMove[0]*CELL+CELL/2;
+    const y=lastAIMove[1]*CELL+CELL/2;
+
+    ctx.beginPath();
+    ctx.arc(x,y,CELL*0.4,0,Math.PI*2);
+    ctx.strokeStyle="cyan";
+    ctx.lineWidth=5;
+    ctx.shadowColor="cyan";
+    ctx.shadowBlur=0;  
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if(turn===1){
+    let moves=getMoves(1);
+    for(let [x,y] of moves){
+      ctx.beginPath();
+      ctx.arc(
+        x*CELL+CELL/2,
+        y*CELL+CELL/2,
+        CELL*0.15,
+        0,Math.PI*2
+      );
+      ctx.fillStyle="rgba(255,165,0,0.8)";
+      ctx.fill();
+    }
+  }
+
+  if(getMoves(1).length===0 && getMoves(-1).length===0){
+    showResult();
+  }else{
+    document.getElementById("msg").textContent=
+      turn===1?"あなた(黒)の番":"CPU(白)の番";
+  }
+}
+
+function canPut(x,y,color){
+  if(board[y][x]!==0) return false;
+
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
+
+  for(let [dx,dy] of dirs){
+    let nx=x+dx, ny=y+dy;
+    let found=false;
+
+    while(nx>=0&&nx<8&&ny>=0&&ny<8){
+      if(board[ny][nx]===-color){
+        found=true;
+      }else if(board[ny][nx]===color){
+        if(found) return true;
+        break;
+      }else break;
+
+      nx+=dx;
+      ny+=dy;
+    }
+  }
+  return false;
+}
+
+function flip(x,y,color){
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
+
+  for(let [dx,dy] of dirs){
+    let nx=x+dx, ny=y+dy;
+    let cells=[];
+
+    while(nx>=0&&nx<8&&ny>=0&&ny<8){
+      if(board[ny][nx]===-color){
+        cells.push([nx,ny]);
+      }else if(board[ny][nx]===color){
+        for(let [fx,fy] of cells){
+          board[fy][fx]=color;
+        }
+        break;
+      }else break;
+
+      nx+=dx;
+      ny+=dy;
+    }
+  }
+}
+
+function getMoves(color){
+  let moves=[];
+  for(let y=0;y<8;y++){
+    for(let x=0;x<8;x++){
+      if(canPut(x,y,color)){
+        moves.push([x,y]);
+      }
+    }
+  }
+  return moves;
+}
+
+function cpuMove(){
+  let moves=getMoves(-1);
+
+  if(moves.length===0){
+    turn=1;
+    draw();
+    return;
+  }
+
+  let move=moves[Math.floor(Math.random()*moves.length)];
+
+  board[move[1]][move[0]]=-1;
+  flip(move[0],move[1],-1);
+
+  lastAIMove=move;
+  draw();
+
+  setTimeout(()=>{
+    lastAIMove=null;
+    draw();
+  },800);
+
+  turn=1;
+  draw();
+}
+
+function showResult(){
+  let black=0,white=0;
+
+  for(let y=0;y<8;y++){
+    for(let x=0;x<8;x++){
+      if(board[y][x]===1) black++;
+      if(board[y][x]===-1) white++;
+    }
+  }
+
+  if(black>white){
+    document.getElementById("msg").textContent=
+      "あなたの勝ち！ 黒:"+black+" 白:"+white;
+  }else if(white>black){
+    document.getElementById("msg").textContent=
+      "CPUの勝ち！ 黒:"+black+" 白:"+white;
+  }else{
+    document.getElementById("msg").textContent=
+      "引き分け！ 黒:"+black+" 白:"+white;
+  }
+}
+
+canvas.addEventListener("click",e=>{
+  if(turn!==1) return;
+
+  const rect=canvas.getBoundingClientRect();
+  const x=Math.floor((e.clientX-rect.left)/CELL);
+  const y=Math.floor((e.clientY-rect.top)/CELL);
+
+  if(canPut(x,y,1)){
+    board[y][x]=1;
+    flip(x,y,1);
+
+    turn=-1;
+    draw();
+    setTimeout(cpuMove,400);
+  }
+});
+
+window.addEventListener("resize",()=>{
+  resizeBoard();
+  draw();
+});
+
+init();
+</script>
+
+</body>
+</html>
