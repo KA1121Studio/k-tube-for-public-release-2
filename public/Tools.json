@@ -1,0 +1,19 @@
+{
+  "tools": [
+    {
+      "id": "Science",
+      "title": "Science",
+      "thumbnail": "https://i.postimg.cc/6Q7LP370/Screenshot-2026-04-01-22-04-43.png",
+      "embedUrl": "/Tools/Science/index.html",
+      "description": "K-tubeオリジナルのwebぷろきし"
+    },
+    {
+      "id": "yt-dl",
+      "title": "ytダウンローダー",
+      "thumbnail": "https://kotonohaworks.com/free-icons/wp-content/uploads/kkrn_icon_download_1.png",
+      "embedUrl": "/Tools/yt-dl/index.html",
+      "description": "K-tube APIを使った高速youtubeダウンローダー"
+    }
+
+  ]
+}
