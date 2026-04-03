@@ -1,0 +1,68 @@
+{
+  "games": [
+    {
+      "id": "vex6",
+      "title": "Vex 6",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWlLToXUhgx8YiT35WkYM_qXG4x7mRqRuIAA&s",
+      "embedUrl": "/Games/Vex6/index.html",
+      "description": "棒人間のアスレチックゲーム"
+    },
+    {
+      "id": "minecraft",
+      "title": "Minecraft",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSasnIEKy9EZiX4tmC56-EKt8hQuJXW5zybqA&s",
+      "embedUrl": "/Games/Minecraft/index.html",
+      "description": "ブロックで、自分の世界を広げよう"
+    },
+    {
+      "id": "2048",
+      "title": "2048",
+      "thumbnail": "https://i.ytimg.com/vi/4NFZwPhqeRs/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLAW5Gr47WItX8gD0QmCCqeJ4b0w4g",
+      "embedUrl": "/Games/2048/index.html",
+      "description": "数字を合体させるゲーム"
+    },
+    {
+      "id": "snowball",
+      "title": "Snowball.io",
+      "thumbnail": "https://i.ytimg.com/vi/CAJw0bouacU/maxresdefault.jpg",
+      "embedUrl": "/Games/Snowball/index.html",
+      "description": "巨大な雪玉を作って相手を落とそう！"
+    },
+    {
+      "id": "slope",
+      "title": "Slope Rider 3D",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7kQ3jZMC5Son5dqxGw9WhWcRUuiOL8kunLA&s",
+      "embedUrl": "/Games/Slope/index.html",
+      "description": "スキーで障害物を避けながら進むゲーム"
+    },
+    {
+      "id": "gta",
+      "title": "GTA",
+      "thumbnail": "https://store-images.s-microsoft.com/image/apps.3117.14492969036550054.5a1d40f5-fe0d-427a-bd14-9a9ed15a423c.f601beb2-973f-47de-ad1a-ccec296ee4d1?q=90&w=480&h=270",
+      "embedUrl": "/Games/GTA/index.html",
+      "description": "街で自由に暴れれるゲーム"
+    },
+    {
+      "id": "sushi",
+      "title": "ギョ〜転！ガッポリすし",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRYM-InT7eFQT9coj75pNJda-Zy_VveJBPcSA&s",
+      "embedUrl": "/Games/Sushi/index.html",
+      "description": "寿司にコインを賭けてふやすゲーム"
+    },
+    {
+      "id": "deer",
+      "title": "Deer Adventure",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGV9py3fi0aOMlaFecyh2a0iFKJBlAyP7YWQ&s",
+      "embedUrl": "/Games/Deer/index.html",
+      "description": "鹿になって街を暴れるゲーム"
+    },
+    {
+      "id": "osero",
+      "title": "おせろ",
+      "thumbnail": "https://sposuru.com/contents/wp-content/uploads/2023/04/%E3%80%90%E3%83%AA%E3%83%90%E3%83%BC%E3%82%B7%E3%80%91%E3%82%AA%E3%82%BB%E3%83%AD%E3%81%A8%E3%81%AE%E9%81%95%E3%81%84%E3%81%AF%E4%BD%95%EF%BC%9F%E3%81%A9%E3%81%A1%E3%82%89%E3%81%8C%E5%85%88%E3%81%AB%E5%A7%8B%E3%81%BE%E3%81%A3%E3%81%9F%E3%81%8B%E3%82%82%E8%A7%A3%E8%AA%AC%EF%BC%81.webp",
+      "embedUrl": "/Games/osero/index.html",
+      "description": "おせろで、AIとバトル"
+    }
+    
+  ]
+}
