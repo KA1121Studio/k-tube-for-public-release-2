@@ -1,0 +1,30 @@
+
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft</title>
+
+  <style>
+    html, body, iframe {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <iframe src="https://example.com" frameborder="0"></iframe>
+
+  <script>
+    // URLを変えたい場合はここを編集
+    const targetURL = "https://eaglercraft-java-1-20-1-jw-1.onrender.com/"
+    document.querySelector("iframe").src = targetURL
+  </script>
+</body>
+</html>
