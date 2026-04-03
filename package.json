@@ -1,0 +1,22 @@
+{
+  "name": "k-tube",
+  "version": "2.32.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",                    
+    "vercel": "node api/index.js",                
+    "deploy:vercel": "vercel --prod"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.1",
+    "@supabase/supabase-js": "^2.28.0"
+ 
+  },
+  "devDependencies": {
+    "vercel": "latest"
+  }
+}
