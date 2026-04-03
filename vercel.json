@@ -1,5 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "builds": [
     {
@@ -15,5 +14,10 @@
     { "src": "/fake-views", "dest": "/api/index.js" },
     { "src": "/Tools/Science/proxy/(.*)", "dest": "/api/index.js" },
     { "src": "/(.*)", "dest": "/public/$1" }
-  ]
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60
+    }
+  }
 }
