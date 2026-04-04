@@ -19,17 +19,42 @@
   return n.toLocaleString('en-US');
 }
 
-function timeAgo(date){
-  if (!(date instanceof Date) || isNaN(date)) return '';
+function timeAgo(input){
+  if (!input) return '';
 
-  const s = Math.floor((Date.now() - date.getTime()) / 1000);
+  let d;
 
-  if(s < 60) return s + '秒前';
-  if(s < 3600) return Math.floor(s/60) + '分前';
-  if(s < 86400) return Math.floor(s/3600) + '時間前';
-  if(s < 2592000) return Math.floor(s/86400) + '日前';
-  if(s < 31536000) return Math.floor(s/2592000) + 'ヶ月前';
-  return Math.floor(s/31536000) + '年前';
+  // すでに Date
+  if (input instanceof Date) {
+    d = input;
+  }
+  // 数値（ミリ秒）
+  else if (typeof input === 'number') {
+    d = new Date(input);
+  }
+  // 数字文字列（ミリ秒）
+  else if (!isNaN(input)) {
+    d = new Date(Number(input));
+  }
+  // ISO文字列など
+  else if (typeof input === 'string' && input.includes('T')) {
+    d = new Date(input);
+  }
+  // "4 years ago" みたいな文字はそのまま返す
+  else {
+    return input;
+  }
+
+  if (isNaN(d.getTime())) return input;
+
+  const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+
+  if (diff < 60) return diff + '秒前';
+  if (diff < 3600) return Math.floor(diff/60) + '分前';
+  if (diff < 86400) return Math.floor(diff/3600) + '時間前';
+  if (diff < 2592000) return Math.floor(diff/86400) + '日前';
+  if (diff < 31536000) return Math.floor(diff/2592000) + 'ヶ月前';
+  return Math.floor(diff/31536000) + '年前';
 }
       async function pipedFetch(endpoint, params = {}) {
         let path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
