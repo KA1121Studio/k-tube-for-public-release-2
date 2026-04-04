@@ -19,24 +19,10 @@
   return n.toLocaleString('en-US');
 }
 
-     function timeAgo(input){
-  if (!input) return '';
+function timeAgo(date){
+  if (!(date instanceof Date) || isNaN(date)) return '';
 
-  let d;
-
-  // 数値ならUNIX秒の可能性
-  if (typeof input === 'number') {
-    d = new Date(input * 1000); // 秒→ミリ秒
-  } else if (!isNaN(input)) {
-    // 数字文字列も対応
-    d = new Date(Number(input) * 1000);
-  } else {
-    d = new Date(input);
-  }
-
-  if (isNaN(d.getTime())) return input;
-
-  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  const s = Math.floor((Date.now() - date.getTime()) / 1000);
 
   if(s < 60) return s + '秒前';
   if(s < 3600) return Math.floor(s/60) + '分前';
@@ -45,7 +31,6 @@
   if(s < 31536000) return Math.floor(s/2592000) + 'ヶ月前';
   return Math.floor(s/31536000) + '年前';
 }
-
       async function pipedFetch(endpoint, params = {}) {
         let path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
         const queryString = new URLSearchParams(params).toString();
