@@ -20,6 +20,7 @@
 }
 
 function timeAgo(input){
+      console.log("timeAgo raw input:", input);
   if (!input) return '';
 
   let d;
