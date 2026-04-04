@@ -344,13 +344,9 @@ if (res.comments && res.comments.length > 0) {
   res.comments.forEach(c => {
 let thumbUrl = c.thumbnail || '';
 
-let proxiedThumb = '';
-
-if (thumbUrl) {
-  proxiedThumb = `/thumb-proxy?url=${encodeURIComponent(thumbUrl)}`;
-} else {
-  proxiedThumb = 'https://www.gstatic.com/youtube/img/no_thumbnail_140-vflXmJqzd.png';
-}
+let proxiedThumb = thumbUrl
+  ? thumbUrl
+  : 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png';
 
     const div = document.createElement('div');
     div.className = 'comment';
