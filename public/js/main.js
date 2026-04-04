@@ -19,36 +19,11 @@
   return n.toLocaleString('en-US');
 }
 
-function timeAgo(input){
-      console.log("timeAgo raw input:", input);
-  if (!input) return '';
+function timeAgo(timestamp){
+  if (!timestamp || timestamp <= 0) return '';
 
-  let d;
-
-  // すでに Date
-  if (input instanceof Date) {
-    d = input;
-  }
-  // 数値（ミリ秒）
-  else if (typeof input === 'number') {
-    d = new Date(input);
-  }
-  // 数字文字列（ミリ秒）
-  else if (!isNaN(input)) {
-    d = new Date(Number(input));
-  }
-  // ISO文字列など
-  else if (typeof input === 'string' && input.includes('T')) {
-    d = new Date(input);
-  }
-  // "4 years ago" みたいな文字はそのまま返す
-  else {
-    return input;
-  }
-
-  if (isNaN(d.getTime())) return input;
-
-  const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+  const date = new Date(timestamp);
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
 
   if (diff < 60) return diff + '秒前';
   if (diff < 3600) return Math.floor(diff/60) + '分前';
