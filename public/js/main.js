@@ -207,7 +207,7 @@ const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const chId = item.uploaderUrl?.split('/').pop() || '';
   const chTitle = item.uploaderName || '';
   const views = item.views || 0;
-  const publishedAt = item.uploadedDate || item.uploaded || '';
+  const publishedAt = item.uploaded || null;
   const channelThumb = await getChannelThumbPiped(chId);
 
   const div = document.createElement('div');
