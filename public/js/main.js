@@ -19,17 +19,37 @@
   return n.toLocaleString('en-US');
 }
 
-      function timeAgo(dateStr){
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return dateStr;
-        const s = Math.floor((Date.now()-d.getTime())/1000);
-        if(s<60) return s + '秒前';
-        if(s<3600) return Math.floor(s/60)+'分前';
-        if(s<86400) return Math.floor(s/3600)+'時間前';
-        if(s<2592000) return Math.floor(s/86400)+'日前';
-        if(s<31536000) return Math.floor(s/2592000)+'ヶ月前';
-        return Math.floor(s/31536000)+'年以上前';
-      }
+function timeAgo(dateStr){
+  if (!dateStr) return '';
+
+  // すでに "4 years ago" みたいな形式ならそのまま返す
+  if (typeof dateStr === 'string' && dateStr.includes('ago')) {
+    return dateStr
+      .replace('years ago','年前')
+      .replace('year ago','年前')
+      .replace('months ago','ヶ月前')
+      .replace('month ago','ヶ月前')
+      .replace('weeks ago','週間前')
+      .replace('week ago','週間前')
+      .replace('days ago','日前')
+      .replace('day ago','日前')
+      .replace('hours ago','時間前')
+      .replace('hour ago','時間前')
+      .replace('minutes ago','分前')
+      .replace('minute ago','分前');
+  }
+
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+
+  const s = Math.floor((Date.now()-d.getTime())/1000);
+  if(s<60) return s + '秒前';
+  if(s<3600) return Math.floor(s/60)+'分前';
+  if(s<86400) return Math.floor(s/3600)+'時間前';
+  if(s<2592000) return Math.floor(s/86400)+'日前';
+  if(s<31536000) return Math.floor(s/2592000)+'ヶ月前';
+  return Math.floor(s/31536000)+'年前';
+}
 
       async function pipedFetch(endpoint, params = {}) {
         let path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
