@@ -342,13 +342,15 @@ async function setupComments(videoId) {
      
 if (res.comments && res.comments.length > 0) {
   res.comments.forEach(c => {
-    let thumbUrl = c.thumbnail || '';
+let thumbUrl = c.thumbnail || '';
 
-    
-  
-    const proxiedThumb = thumbUrl && thumbUrl.includes('proxy.piped.private.coffee')
-      ? `/thumb-proxy?url=${encodeURIComponent(thumbUrl)}`
-      : 'https://www.gstatic.com/youtube/img/no_thumbnail_140-vflXmJqzd.png';
+let proxiedThumb = '';
+
+if (thumbUrl) {
+  proxiedThumb = `/thumb-proxy?url=${encodeURIComponent(thumbUrl)}`;
+} else {
+  proxiedThumb = 'https://www.gstatic.com/youtube/img/no_thumbnail_140-vflXmJqzd.png';
+}
 
     const div = document.createElement('div');
     div.className = 'comment';
