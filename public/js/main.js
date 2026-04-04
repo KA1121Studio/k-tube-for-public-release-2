@@ -19,19 +19,18 @@
   return n.toLocaleString('en-US');
 }
 
-function timeAgo(timestamp){
-  if (!timestamp || timestamp <= 0) return '';
+      function timeAgo(dateStr){
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const s = Math.floor((Date.now()-d.getTime())/1000);
+        if(s<60) return s + '秒前';
+        if(s<3600) return Math.floor(s/60)+'分前';
+        if(s<86400) return Math.floor(s/3600)+'時間前';
+        if(s<2592000) return Math.floor(s/86400)+'日前';
+        if(s<31536000) return Math.floor(s/2592000)+'ヶ月前';
+        return Math.floor(s/31536000)+'年以上前';
+      }
 
-  const date = new Date(timestamp);
-  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
-
-  if (diff < 60) return diff + '秒前';
-  if (diff < 3600) return Math.floor(diff/60) + '分前';
-  if (diff < 86400) return Math.floor(diff/3600) + '時間前';
-  if (diff < 2592000) return Math.floor(diff/86400) + '日前';
-  if (diff < 31536000) return Math.floor(diff/2592000) + 'ヶ月前';
-  return Math.floor(diff/31536000) + '年前';
-}
       async function pipedFetch(endpoint, params = {}) {
         let path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
         const queryString = new URLSearchParams(params).toString();
@@ -207,7 +206,7 @@ const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const chId = item.uploaderUrl?.split('/').pop() || '';
   const chTitle = item.uploaderName || '';
   const views = item.views || 0;
-  const publishedAt = item.uploaded || null;
+  const publishedAt = item.uploadedDate || item.uploaded || '';
   const channelThumb = await getChannelThumbPiped(chId);
 
   const div = document.createElement('div');
