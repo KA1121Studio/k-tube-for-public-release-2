@@ -206,7 +206,25 @@ const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const chId = item.uploaderUrl?.split('/').pop() || '';
   const chTitle = item.uploaderName || '';
   const views = item.views || 0;
-  const publishedAt = item.uploadedDate || item.uploaded || '';
+let publishedAt = item.uploadedDate || item.uploaded || '';
+
+if (vid) {
+  try {
+    const searchRes = await fetch(`/piped/search?q=${vid}&filter=videos`);
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      const matched = searchData.items?.find(it =>
+        it.url?.includes(vid)
+      );
+
+      if (matched?.uploaded) {
+        publishedAt = new Date(matched.uploaded).toISOString();
+      }
+    }
+  } catch (e) {
+    console.warn('ホーム 投稿日取得失敗', e);
+  }
+}
   const channelThumb = await getChannelThumbPiped(chId);
 
   const div = document.createElement('div');
