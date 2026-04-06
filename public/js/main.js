@@ -206,27 +206,7 @@ const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const chId = item.uploaderUrl?.split('/').pop() || '';
   const chTitle = item.uploaderName || '';
   const views = item.views || 0;
-
-
-let publishedAt = '';
-
-if (vid) {
-  try {
-    const searchRes = await fetch(`/piped/search?q=${vid}&filter=videos`);
-    if (searchRes.ok) {
-      const searchData = await searchRes.json();
-      const matched = searchData.items?.find(it =>
-        it.url?.includes(vid)
-      );
-
-      if (matched?.uploaded) {
-        publishedAt = new Date(matched.uploaded).toISOString();
-      }
-    }
-  } catch (e) {
-    console.warn('ホーム 投稿日取得失敗', e);
-  }
-}
+  const publishedAt = item.uploadedDate || item.uploaded || '';
   const channelThumb = await getChannelThumbPiped(chId);
 
   const div = document.createElement('div');
@@ -530,25 +510,11 @@ for (const backend of backends) {
     const views = fmtNum(metaData.viewCount ?? metaData.views ?? 0);
     const likes = fmtNum(metaData.likeCount ?? 0);
     let uploaded = '---';
-
-try {
-  // 投稿日だけ search API から取得
-  const searchRes = await fetch(`/piped/search?q=${videoId}&filter=videos`);
-  if (searchRes.ok) {
-    const searchData = await searchRes.json();
-
-    const items = searchData.items || [];
-    const matched = items.find(it =>
-      it.url?.includes(videoId)
-    );
-
-    if (matched?.uploaded) {
-      uploaded = timeAgo(new Date(matched.uploaded).toISOString());
+    if (metaData.published || metaData.uploadDate || metaData.uploaded) {
+      try {
+        uploaded = timeAgo(new Date(metaData.published || metaData.uploadDate || metaData.uploaded).toISOString());
+      } catch {}
     }
-  }
-} catch (e) {
-  console.warn('投稿日取得失敗（search API）', e);
-}
 
 
     let rawDesc = metaData.description || metaData.shortDescription || '説明文は現在取得できませんでした';
