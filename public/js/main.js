@@ -19,27 +19,17 @@
   return n.toLocaleString('en-US');
 }
 
-     function timeAgo(dateStr){
-  if (!dateStr) return '---';
-
-  // すでに「○年前」形式ならそのまま返す
-  if (typeof dateStr === 'string' && 
-      (dateStr.includes('ago') || dateStr.includes('前'))) {
-    return dateStr;
-  }
-
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-
-  const s = Math.floor((Date.now()-d.getTime())/1000);
-
-  if(s<60) return s + '秒前';
-  if(s<3600) return Math.floor(s/60)+'分前';
-  if(s<86400) return Math.floor(s/3600)+'時間前';
-  if(s<2592000) return Math.floor(s/86400)+'日前';
-  if(s<31536000) return Math.floor(s/2592000)+'ヶ月前';
-  return Math.floor(s/31536000)+'年前';
-}
+      function timeAgo(dateStr){
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const s = Math.floor((Date.now()-d.getTime())/1000);
+        if(s<60) return s + '秒前';
+        if(s<3600) return Math.floor(s/60)+'分前';
+        if(s<86400) return Math.floor(s/3600)+'時間前';
+        if(s<2592000) return Math.floor(s/86400)+'日前';
+        if(s<31536000) return Math.floor(s/2592000)+'ヶ月前';
+        return Math.floor(s/31536000)+'年以上前';
+      }
 
       async function pipedFetch(endpoint, params = {}) {
         let path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
@@ -192,16 +182,11 @@ async function loadHome() {
   homeLoading = true;
   const grid = el('videoGrid');
   try {
-const data = await pipedFetch('/trending', { region: 'JP' });
-
-const filtered = (data || []).filter(item =>
-  item.uploaded && item.uploaded > 0 && item.duration !== -1
-);
-
-for (const item of filtered) {
-  const card = await makeVideoCard(item);
-  grid.appendChild(card);
-}
+    const data = await pipedFetch('/trending', { region: 'JP' });
+    for (const item of data || []) {
+      const card = await makeVideoCard(item);
+      grid.appendChild(card);
+    }
   } catch (e) {
     console.error(e);
     grid.innerHTML += `<div style="color:#c00; padding:16px; text-align:center;">
@@ -527,7 +512,7 @@ for (const backend of backends) {
     let uploaded = '---';
     if (metaData.published || metaData.uploadDate || metaData.uploaded) {
       try {
-        uploaded = timeAgo(metaData.published || metaData.uploadDate || metaData.uploaded);
+        uploaded = timeAgo(new Date(metaData.published || metaData.uploadDate || metaData.uploaded).toISOString());
       } catch {}
     }
 
