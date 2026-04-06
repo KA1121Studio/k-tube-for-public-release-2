@@ -31,39 +31,6 @@
         return Math.floor(s/31536000)+'年以上前';
       }
 
-const uploadDateCache = new Map();
-
-async function fetchUploadDateFromSearch(videoId){
-  try{
-    if(uploadDateCache.has(videoId)){
-      return uploadDateCache.get(videoId);
-    }
-
-    const data = await pipedFetch(`/search`, {
-      q: videoId,
-      filter: 'videos'
-    });
-
-    if(!data?.items?.length) return null;
-
-    const item = data.items.find(v =>
-      v.url === `/watch?v=${videoId}`
-    );
-
-    const uploaded = item?.uploadedDate || null;
-
-    if(uploaded){
-      uploadDateCache.set(videoId, uploaded);
-    }
-
-    return uploaded;
-
-  }catch(e){
-    console.error("upload date fetch failed", e);
-    return null;
-  }
-}
-
       async function pipedFetch(endpoint, params = {}) {
         let path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
         const queryString = new URLSearchParams(params).toString();
@@ -216,29 +183,10 @@ async function loadHome() {
   const grid = el('videoGrid');
   try {
     const data = await pipedFetch('/trending', { region: 'JP' });
-for (const item of data || []) {
-
-  // ① videoId 取得
-  const vid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
-
-  if (vid) {
-    try {
-      // ② /watch API で詳細取得
-      const details = await pipedFetch('/watch', { v: vid });
-
-      // ③ uploadDate を item に上書き
-      if (details?.uploadDate) {
-        item.uploadedDate = details.uploadDate;
-      }
-
-    } catch (e) {
-      console.warn('watch取得失敗:', vid);
+    for (const item of data || []) {
+      const card = await makeVideoCard(item);
+      grid.appendChild(card);
     }
-  }
-
-  const card = await makeVideoCard(item);
-  grid.appendChild(card);
-}
   } catch (e) {
     console.error(e);
     grid.innerHTML += `<div style="color:#c00; padding:16px; text-align:center;">
@@ -253,22 +201,16 @@ for (const item of data || []) {
 async function makeVideoCard(item) {
   const vid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
   const title = item.title || '';
-  const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
+  
+const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const chId = item.uploaderUrl?.split('/').pop() || '';
   const chTitle = item.uploaderName || '';
   const views = item.views || 0;
   const publishedAt = item.uploadedDate || item.uploaded || '';
   const channelThumb = await getChannelThumbPiped(chId);
 
-  let publishedText = publishedAt;
-  const searchUploaded = await fetchUploadDateFromSearch(vid);
-  if (searchUploaded) {
-    publishedText = searchUploaded;
-  }
-
   const div = document.createElement('div');
   div.className = 'card';
-
   div.innerHTML = `
     <div class="thumb" data-vid="${vid}">
       <img src="${th}" alt="">
@@ -279,7 +221,7 @@ async function makeVideoCard(item) {
         <div class="title">${escapeHtml(title)}</div>
         <div class="sub">
           <a href="#channel=${chId}" data-channel="${chId}" class="ch-link">${escapeHtml(chTitle)}</a>
-          ・ ${fmtNum(views)} 回視聴 ・ ${timeAgo(publishedText)}
+          ・ ${fmtNum(views)} 回視聴 ・ ${timeAgo(publishedAt)}
         </div>
       </div>
     </div>
@@ -297,6 +239,9 @@ async function makeVideoCard(item) {
 
   return div;
 }
+
+
+
 
 async function loadStats() {
   try {
@@ -407,31 +352,25 @@ let proxiedThumb = thumbUrl
     div.className = 'comment';
     div.innerHTML = `
       <img src="${proxiedThumb}" alt=""
-     style="width:40px; height:40px; border-radius:50%; object-fit: cover; flex-shrink:0;"
-     loading="lazy"
-     referrerpolicy="no-referrer"
-     crossorigin="anonymous"  
-     onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'; this.onerror=null;">
+           style="width:40px; height:40px; border-radius:50%; object-fit: cover; flex-shrink:0;"
+           loading="lazy"
+           referrerpolicy="no-referrer"
+           crossorigin="anonymous"  
+           onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'; this.onerror=null;">
+      <div class="c-body">
+        <div class="name" style="display:flex; align-items:center; gap:6px; font-size:13px;">
+          <span style="font-weight:500;">${escapeHtml(c.author || '匿名ユーザー')}</span>
+          <span style="color:#606060; font-size:12px;">
+            ${timeAgo(c.commentedTime || '')}
+          </span>
+        </div>
+<div class="text" style="margin-top:4px; line-height:1.4; font-size:14px; white-space: pre-wrap; word-break: break-word; color:#0f0f0f;">${escapeHtml(c.commentText || '(内容がありません)')
+  .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+  .replace(/\r?\n/g, '<br>')
+  .replace(/^(?:\s|　|<br>)+/gi, '')
+}</div>
 
-<div class="c-body">
-  <div class="name" style="display:flex; align-items:center; gap:6px; font-size:13px;">
-    <span style="font-weight:500;">
-      ${escapeHtml(c.author || '匿名ユーザー')}
-    </span>
-    <span style="color:#606060; font-size:12px;">
-      ${timeAgo(c.commentedTime || '')}
-    </span>
-  </div>
-
-  <div class="text"
-       style="margin-top:4px; line-height:1.4; font-size:14px; white-space: pre-wrap; word-break: break-word; color:#0f0f0f;">
-    ${escapeHtml(c.commentText || '(内容がありません)')
-      .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
-      .replace(/\r?\n/g, '<br>')
-      .replace(/^(?:\s|　|<br>)+/gi, '')
-    }
-  </div>
-</div>
+      </div>
     `;
     list.appendChild(div);
   });
@@ -571,11 +510,25 @@ for (const backend of backends) {
     const views = fmtNum(metaData.viewCount ?? metaData.views ?? 0);
     const likes = fmtNum(metaData.likeCount ?? 0);
     let uploaded = '---';
-    if (metaData.published || metaData.uploadDate || metaData.uploaded) {
-      try {
-        uploaded = timeAgo(new Date(metaData.published || metaData.uploadDate || metaData.uploaded).toISOString());
-      } catch {}
+
+try {
+  // 投稿日だけ search API から取得
+  const searchRes = await fetch(`/piped/search?q=${videoId}&filter=videos`);
+  if (searchRes.ok) {
+    const searchData = await searchRes.json();
+
+    const items = searchData.items || [];
+    const matched = items.find(it =>
+      it.url?.includes(videoId)
+    );
+
+    if (matched?.uploaded) {
+      uploaded = timeAgo(new Date(matched.uploaded).toISOString());
     }
+  }
+} catch (e) {
+  console.warn('投稿日取得失敗（search API）', e);
+}
 
 
     let rawDesc = metaData.description || metaData.shortDescription || '説明文は現在取得できませんでした';
