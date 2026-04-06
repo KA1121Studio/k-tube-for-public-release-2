@@ -206,7 +206,7 @@ const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const chId = item.uploaderUrl?.split('/').pop() || '';
   const chTitle = item.uploaderName || '';
   const views = item.views || 0;
-let publishedAt = item.uploadedDate || item.uploaded || '';
+
 
 let publishedAt = '';
 
