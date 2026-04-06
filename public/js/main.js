@@ -522,7 +522,7 @@ for (const backend of backends) {
     let uploaded = '---';
     if (metaData.published || metaData.uploadDate || metaData.uploaded) {
       try {
-        uploaded = timeAgo(new Date(metaData.published || metaData.uploadDate || metaData.uploaded).toISOString());
+        uploaded = timeAgo(metaData.published || metaData.uploadDate || metaData.uploaded);
       } catch {}
     }
 
