@@ -208,6 +208,8 @@ const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const views = item.views || 0;
 let publishedAt = item.uploadedDate || item.uploaded || '';
 
+let publishedAt = '';
+
 if (vid) {
   try {
     const searchRes = await fetch(`/piped/search?q=${vid}&filter=videos`);
