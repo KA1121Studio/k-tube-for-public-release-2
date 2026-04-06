@@ -253,38 +253,37 @@ for (const item of data || []) {
 async function makeVideoCard(item) {
   const vid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
   const title = item.title || '';
-  
-const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
+  const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const chId = item.uploaderUrl?.split('/').pop() || '';
   const chTitle = item.uploaderName || '';
   const views = item.views || 0;
   const publishedAt = item.uploadedDate || item.uploaded || '';
   const channelThumb = await getChannelThumbPiped(chId);
 
+  let publishedText = publishedAt;
+  const searchUploaded = await fetchUploadDateFromSearch(vid);
+  if (searchUploaded) {
+    publishedText = searchUploaded;
+  }
+
   const div = document.createElement('div');
   div.className = 'card';
-let publishedText = publishedAt;
 
-const searchUploaded = await fetchUploadDateFromSearch(vid);
-if (searchUploaded) {
-  publishedText = searchUploaded;
-}
-
-return `
-<div class="thumb" data-vid="${vid}">
-  <img src="${th}" alt="">
-</div>
-<div class="meta">
-  <div class="channel-thumb"><img src="${channelThumb}" alt=""></div>
-  <div class="info">
-    <div class="title">${escapeHtml(title)}</div>
-    <div class="sub">
-      <a href="#channel=${chId}" data-channel="${chId}" class="ch-link">${escapeHtml(chTitle)}</a>
-      ・ ${fmtNum(views)} 回視聴 ・ ${timeAgo(publishedText)}
+  div.innerHTML = `
+    <div class="thumb" data-vid="${vid}">
+      <img src="${th}" alt="">
     </div>
-  </div>
-</div>
-`;
+    <div class="meta">
+      <div class="channel-thumb"><img src="${channelThumb}" alt=""></div>
+      <div class="info">
+        <div class="title">${escapeHtml(title)}</div>
+        <div class="sub">
+          <a href="#channel=${chId}" data-channel="${chId}" class="ch-link">${escapeHtml(chTitle)}</a>
+          ・ ${fmtNum(views)} 回視聴 ・ ${timeAgo(publishedText)}
+        </div>
+      </div>
+    </div>
+  `;
 
   div.querySelector('.thumb').addEventListener('click', () => {
     location.hash = `watch=${vid}`;
@@ -298,9 +297,6 @@ return `
 
   return div;
 }
-
-
-
 
 async function loadStats() {
   try {
