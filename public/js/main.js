@@ -206,22 +206,7 @@ const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const chId = item.uploaderUrl?.split('/').pop() || '';
   const chTitle = item.uploaderName || '';
   const views = item.views || 0;
-let publishedAt = item.uploadedDate || item.uploaded || '';
-
-try {
-  const searchRes = await fetch(`/piped/search?q=${vid}&filter=videos`);
-  if (searchRes.ok) {
-    const searchData = await searchRes.json();
-    const matched = (searchData.items || []).find(it =>
-      it.url?.includes(vid)
-    );
-    if (matched?.uploaded) {
-      publishedAt = new Date(matched.uploaded).toISOString();
-    }
-  }
-} catch (e) {
-  console.warn('ホーム投稿日取得失敗', e);
-}
+  const publishedAt = item.uploadedDate || item.uploaded || '';
   const channelThumb = await getChannelThumbPiped(chId);
 
   const div = document.createElement('div');
