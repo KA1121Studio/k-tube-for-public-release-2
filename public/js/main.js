@@ -31,6 +31,39 @@
         return Math.floor(s/31536000)+'年以上前';
       }
 
+const uploadDateCache = new Map();
+
+async function fetchUploadDateFromSearch(videoId){
+  try{
+    if(uploadDateCache.has(videoId)){
+      return uploadDateCache.get(videoId);
+    }
+
+    const data = await pipedFetch(`/search`, {
+      q: videoId,
+      filter: 'videos'
+    });
+
+    if(!data?.items?.length) return null;
+
+    const item = data.items.find(v =>
+      v.url === `/watch?v=${videoId}`
+    );
+
+    const uploaded = item?.uploadedDate || null;
+
+    if(uploaded){
+      uploadDateCache.set(videoId, uploaded);
+    }
+
+    return uploaded;
+
+  }catch(e){
+    console.error("upload date fetch failed", e);
+    return null;
+  }
+}
+
       async function pipedFetch(endpoint, params = {}) {
         let path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
         const queryString = new URLSearchParams(params).toString();
@@ -230,21 +263,28 @@ const th = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
 
   const div = document.createElement('div');
   div.className = 'card';
-  div.innerHTML = `
-    <div class="thumb" data-vid="${vid}">
-      <img src="${th}" alt="">
+let publishedText = publishedAt;
+
+const searchUploaded = await fetchUploadDateFromSearch(vid);
+if (searchUploaded) {
+  publishedText = searchUploaded;
+}
+
+return `
+<div class="thumb" data-vid="${vid}">
+  <img src="${th}" alt="">
+</div>
+<div class="meta">
+  <div class="channel-thumb"><img src="${channelThumb}" alt=""></div>
+  <div class="info">
+    <div class="title">${escapeHtml(title)}</div>
+    <div class="sub">
+      <a href="#channel=${chId}" data-channel="${chId}" class="ch-link">${escapeHtml(chTitle)}</a>
+      ・ ${fmtNum(views)} 回視聴 ・ ${timeAgo(publishedText)}
     </div>
-    <div class="meta">
-      <div class="channel-thumb"><img src="${channelThumb}" alt=""></div>
-      <div class="info">
-        <div class="title">${escapeHtml(title)}</div>
-        <div class="sub">
-          <a href="#channel=${chId}" data-channel="${chId}" class="ch-link">${escapeHtml(chTitle)}</a>
-          ・ ${fmtNum(views)} 回視聴 ・ ${timeAgo(publishedAt)}
-        </div>
-      </div>
-    </div>
-  `;
+  </div>
+</div>
+`;
 
   div.querySelector('.thumb').addEventListener('click', () => {
     location.hash = `watch=${vid}`;
@@ -371,25 +411,31 @@ let proxiedThumb = thumbUrl
     div.className = 'comment';
     div.innerHTML = `
       <img src="${proxiedThumb}" alt=""
-           style="width:40px; height:40px; border-radius:50%; object-fit: cover; flex-shrink:0;"
-           loading="lazy"
-           referrerpolicy="no-referrer"
-           crossorigin="anonymous"  
-           onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'; this.onerror=null;">
-      <div class="c-body">
-        <div class="name" style="display:flex; align-items:center; gap:6px; font-size:13px;">
-          <span style="font-weight:500;">${escapeHtml(c.author || '匿名ユーザー')}</span>
-          <span style="color:#606060; font-size:12px;">
-            ${timeAgo(c.commentedTime || '')}
-          </span>
-        </div>
-<div class="text" style="margin-top:4px; line-height:1.4; font-size:14px; white-space: pre-wrap; word-break: break-word; color:#0f0f0f;">${escapeHtml(c.commentText || '(内容がありません)')
-  .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
-  .replace(/\r?\n/g, '<br>')
-  .replace(/^(?:\s|　|<br>)+/gi, '')
-}</div>
+     style="width:40px; height:40px; border-radius:50%; object-fit: cover; flex-shrink:0;"
+     loading="lazy"
+     referrerpolicy="no-referrer"
+     crossorigin="anonymous"  
+     onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'; this.onerror=null;">
 
-      </div>
+<div class="c-body">
+  <div class="name" style="display:flex; align-items:center; gap:6px; font-size:13px;">
+    <span style="font-weight:500;">
+      ${escapeHtml(c.author || '匿名ユーザー')}
+    </span>
+    <span style="color:#606060; font-size:12px;">
+      ${timeAgo(c.commentedTime || '')}
+    </span>
+  </div>
+
+  <div class="text"
+       style="margin-top:4px; line-height:1.4; font-size:14px; white-space: pre-wrap; word-break: break-word; color:#0f0f0f;">
+    ${escapeHtml(c.commentText || '(内容がありません)')
+      .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+      .replace(/\r?\n/g, '<br>')
+      .replace(/^(?:\s|　|<br>)+/gi, '')
+    }
+  </div>
+</div>
     `;
     list.appendChild(div);
   });
