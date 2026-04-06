@@ -192,11 +192,16 @@ async function loadHome() {
   homeLoading = true;
   const grid = el('videoGrid');
   try {
-    const data = await pipedFetch('/trending', { region: 'JP' });
-    for (const item of data || []) {
-      const card = await makeVideoCard(item);
-      grid.appendChild(card);
-    }
+const data = await pipedFetch('/trending', { region: 'JP' });
+
+const filtered = (data || []).filter(item =>
+  item.uploaded && item.uploaded > 0 && item.duration !== -1
+);
+
+for (const item of filtered) {
+  const card = await makeVideoCard(item);
+  grid.appendChild(card);
+}
   } catch (e) {
     console.error(e);
     grid.innerHTML += `<div style="color:#c00; padding:16px; text-align:center;">
