@@ -19,17 +19,27 @@
   return n.toLocaleString('en-US');
 }
 
-      function timeAgo(dateStr){
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return dateStr;
-        const s = Math.floor((Date.now()-d.getTime())/1000);
-        if(s<60) return s + '秒前';
-        if(s<3600) return Math.floor(s/60)+'分前';
-        if(s<86400) return Math.floor(s/3600)+'時間前';
-        if(s<2592000) return Math.floor(s/86400)+'日前';
-        if(s<31536000) return Math.floor(s/2592000)+'ヶ月前';
-        return Math.floor(s/31536000)+'年以上前';
-      }
+     function timeAgo(dateStr){
+  if (!dateStr) return '---';
+
+  // すでに「○年前」形式ならそのまま返す
+  if (typeof dateStr === 'string' && 
+      (dateStr.includes('ago') || dateStr.includes('前'))) {
+    return dateStr;
+  }
+
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+
+  const s = Math.floor((Date.now()-d.getTime())/1000);
+
+  if(s<60) return s + '秒前';
+  if(s<3600) return Math.floor(s/60)+'分前';
+  if(s<86400) return Math.floor(s/3600)+'時間前';
+  if(s<2592000) return Math.floor(s/86400)+'日前';
+  if(s<31536000) return Math.floor(s/2592000)+'ヶ月前';
+  return Math.floor(s/31536000)+'年前';
+}
 
       async function pipedFetch(endpoint, params = {}) {
         let path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
