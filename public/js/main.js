@@ -183,10 +183,29 @@ async function loadHome() {
   const grid = el('videoGrid');
   try {
     const data = await pipedFetch('/trending', { region: 'JP' });
-    for (const item of data || []) {
-      const card = await makeVideoCard(item);
-      grid.appendChild(card);
+for (const item of data || []) {
+
+  // ① videoId 取得
+  const vid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
+
+  if (vid) {
+    try {
+      // ② /watch API で詳細取得
+      const details = await pipedFetch('/watch', { v: vid });
+
+      // ③ uploadDate を item に上書き
+      if (details?.uploadDate) {
+        item.uploadedDate = details.uploadDate;
+      }
+
+    } catch (e) {
+      console.warn('watch取得失敗:', vid);
     }
+  }
+
+  const card = await makeVideoCard(item);
+  grid.appendChild(card);
+}
   } catch (e) {
     console.error(e);
     grid.innerHTML += `<div style="color:#c00; padding:16px; text-align:center;">
