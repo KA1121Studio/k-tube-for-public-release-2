@@ -59,45 +59,71 @@ function updateTodayCount() {
 }
 
 async function incrementAccesses() {
-  const today = new Date().toISOString().split('T')[0];
+  // JSTで日付(YYYY-MM-DD)を作る
+  const today = new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .format(new Date())
+    .replace(/\//g, '-'); // "YYYY-MM-DD" に寄せる
 
-  const { data, error } = await supabase
+  // 念のためフォーマットがズレてないか（"YYYY-MM-DD" になるはず）
+  // console.log({ today });
+
+  // 今日行があるか
+  const { data: todayRows, error: selectError } = await supabase
     .from('access_stats')
     .select('*')
     .eq('date', today);
 
-  if (error) {
-    console.error("Select error:", error);
+  if (selectError) {
+    console.error("Select error:", selectError);
     return;
   }
 
-  if (!data || data.length === 0) {
-    const { error: insertError } = await supabase
-      .from('access_stats')
-      .insert({
-        date: today,
-        total_views: 1,
-        today_views: 1
-      });
-
-    if (insertError) console.error("Insert error:", insertError);
-  } else {
-    const row = data[0];
+  // 今日行があるなら +1（累計も+1）
+  if (todayRows && todayRows.length > 0) {
+    const row = todayRows[0];
 
     const { error: updateError } = await supabase
       .from('access_stats')
       .update({
         total_views: row.total_views + 1,
-        today_views: row.today_views + 1
+        today_views: row.today_views + 1,
       })
       .eq('id', row.id);
 
     if (updateError) console.error("Update error:", updateError);
+    return;
   }
+
+  // 今日行が無いなら、直前日の total_views を取って +1
+  const { data: prevRows, error: prevError } = await supabase
+    .from('access_stats')
+    .select('total_views')
+    .lt('date', today)
+    .order('date', { ascending: false })
+    .limit(1);
+
+  if (prevError) {
+    console.error("Prev select error:", prevError);
+    return;
+  }
+
+  const prevTotal = prevRows && prevRows.length > 0 ? prevRows[0].total_views : 0;
+
+  const { error: insertError } = await supabase
+    .from('access_stats')
+    .insert({
+      date: today,
+      total_views: prevTotal + 1, // 全期間累計を維持
+      today_views: 1,
+    });
+
+  if (insertError) console.error("Insert error:", insertError);
 }
-
-
-
 
 
 app.get('/api/v2/video', async (req, res) => {
