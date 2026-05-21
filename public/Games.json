@@ -76,6 +76,14 @@
       "thumbnail": "https://i.postimg.cc/3rDn1shs/Screenshot-2026-05-21-10-54-19.png",
       "embedUrl": "/Games/lift-off/index.html",
       "description": "ロケット発射シミュレーター"
+    },
+
+        {
+      "id": "パチスロ",
+      "title": "patisuro",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQD2ZSCJRZzPlMpUZh63rYA7qOdcaz-NlayzpG0Nmiux5u4LlE&s",
+      "embedUrl": "/Games/patisuro/index.html",
+      "description": "スロットで遊ぼう！"
     }
     
   ]
