@@ -1489,7 +1489,7 @@ function renderSettings() {
 
 
       <div style="text-align:center; margin:48px 0; color:#606060; font-size:14px;">
-        K-tube バージョン 2.32
+         <div id="versionTap">K-tube バージョン 2.32</div>
         <br>© 2025-2026
       </div>
     </section>
@@ -1572,6 +1572,28 @@ document.getElementById('defaultPlayerSelect')?.addEventListener('change', e => 
       location.reload();
     }
   });
+      // renderSettings() の最後の方にあるバージョン表示部分に id を付与
+// 例: <div id="versionTap">K-tube バージョン 2.32</div>
+// 既存のHTML生成部分を修正する必要あり
+
+// 以下のコードを renderSettings() 内の適切な場所に追記
+let tapCount = 0;
+const versionDiv = document.querySelector('#settingsSection .version-tap'); // 実際のセレクタに合わせる
+if (versionDiv) {
+  versionDiv.addEventListener('click', () => {
+    tapCount++;
+    if (tapCount >= 6) {
+      if (!document.getElementById('adminLink')) {
+        const adminLink = document.createElement('div');
+        adminLink.id = 'adminLink';
+        adminLink.innerHTML = '<a href="/admin" target="_blank" style="color:#065fd4;">管理ページへ</a>';
+        versionDiv.parentNode.appendChild(adminLink);
+      }
+      tapCount = 0;
+    }
+    setTimeout(() => { tapCount = 0; }, 3000);
+  });
+}
 }   
 
 
@@ -1680,6 +1702,155 @@ function renderContact() {
     </div>
   `;
 }
+
+function getDeviceId() {
+  let id = localStorage.getItem('kdevice');
+  if (!id) {
+    id = 'dev_' + Math.random().toString(36).substr(2, 16);
+    localStorage.setItem('kdevice', id);
+  }
+  return id;
+}
+
+let currentUnreadCount = 0;
+
+async function fetchUnreadNotifications() {
+  const deviceId = getDeviceId();
+  try {
+    const res = await fetch('/api/notifications', {
+      headers: { 'X-Device-Id': deviceId }
+    });
+    const list = await res.json();
+    currentUnreadCount = list.length;
+    const badge = document.getElementById('notificationBadge');
+    if (badge) {
+      badge.style.display = currentUnreadCount > 0 ? 'block' : 'none';
+    }
+    return list;
+  } catch(e) {
+    console.warn(e);
+    return [];
+  }
+}
+
+let popupElement = null;
+
+function showNotificationPopup() {
+  if (popupElement) popupElement.remove();
+  
+  const popup = document.createElement('div');
+  popup.className = 'notification-popup';
+  popup.innerHTML = `<div class="header">📢 お知らせ</div><div id="popupList"></div>`;
+  document.body.appendChild(popup);
+  popupElement = popup;
+
+  // クリックで閉じる（popup外）
+  setTimeout(() => {
+    document.addEventListener('click', function onClickOutside(e) {
+      if (!popup.contains(e.target) && !document.getElementById('notificationBell').contains(e.target)) {
+        popup.remove();
+        popupElement = null;
+        document.removeEventListener('click', onClickOutside);
+      }
+    });
+  }, 10);
+
+  renderNotificationList();
+}
+
+async function renderNotificationList() {
+  const listContainer = document.getElementById('popupList');
+  if (!listContainer) return;
+  const notifications = await fetchUnreadNotifications(); // 最新を取得
+  if (notifications.length === 0) {
+    listContainer.innerHTML = '<div class="item">新着のお知らせはありません</div>';
+    return;
+  }
+  listContainer.innerHTML = '';
+  for (const notif of notifications) {
+    const item = document.createElement('div');
+    item.className = 'item';
+    item.innerHTML = `<div class="title">${escapeHtml(notif.title)}</div><div class="date">${new Date(notif.created_at).toLocaleString()}</div>`;
+    item.addEventListener('click', async () => {
+      // 詳細表示（モーダル）＋既読処理
+      showNotificationDetail(notif);
+      // 既読にする
+      await fetch('/api/notifications/dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Device-Id': getDeviceId() },
+        body: JSON.stringify({ notificationId: notif.id })
+      });
+      // 再描画
+      renderNotificationList();
+      fetchUnreadNotifications(); // バッジ更新
+    });
+    listContainer.appendChild(item);
+  }
+}
+
+function showNotificationDetail(notif) {
+  // 簡易モーダル（既存のモーダルがない場合はalertでも可）
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; top:20%; left:50%; transform:translate(-50%,0); background:white; padding:20px; border-radius:12px; z-index:30000; width:80%; max-width:500px; box-shadow:0 0 0 1000px rgba(0,0,0,0.5);';
+  modal.innerHTML = `
+    <h3>${escapeHtml(notif.title)}</h3>
+    <div style="margin:16px 0;">${escapeHtml(notif.content).replace(/\n/g,'<br>')}</div>
+    <button id="closeDetailBtn">閉じる</button>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('closeDetailBtn').onclick = () => modal.remove();
+}
+
+document.getElementById('notificationBell')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  showNotificationPopup();
+});
+
+async function checkMaintenance() {
+  try {
+    const res = await fetch('/api/maintenance');
+    const data = await res.json();
+    if (data.active && data.action === 1) {
+      // 操作不可能 → 全操作をブロック
+      if (!document.querySelector('.maintenance-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'maintenance-overlay';
+        overlay.innerHTML = `
+          <h2>🔧 メンテナンス中</h2>
+          <p>${escapeHtml(data.content)}</p>
+          <p>${new Date(data.start).toLocaleString()} 〜 ${new Date(data.end).toLocaleString()}</p>
+          <p>ご不便をおかけしますが、しばらくお待ちください。</p>
+        `;
+        document.body.appendChild(overlay);
+        // すべてのクリックをブロックするため、bodyにpointer-events:noneをかける
+        document.body.style.pointerEvents = 'none';
+        overlay.style.pointerEvents = 'auto';
+      }
+    } else if (data.active && data.action === 0) {
+      // 操作可能：警告バーだけ表示
+      let banner = document.getElementById('maintenanceBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'maintenanceBanner';
+        banner.style.cssText = 'background:#ffc107; text-align:center; padding:8px; font-weight:bold;';
+        banner.innerHTML = `⚠️ ${escapeHtml(data.title)} - ${escapeHtml(data.content)}`;
+        document.body.prepend(banner);
+      }
+    } else {
+      // メンテナンス解除
+      document.querySelector('.maintenance-overlay')?.remove();
+      document.getElementById('maintenanceBanner')?.remove();
+      document.body.style.pointerEvents = '';
+    }
+  } catch(e) { console.warn(e); }
+}
+
+// 1分ごとにチェック
+setInterval(checkMaintenance, 60000);
+window.addEventListener('load', () => {
+  fetchUnreadNotifications();
+  checkMaintenance();
+});
 
 
 import('./games.js').then(() => console.log('games.js loaded'));
