@@ -361,32 +361,53 @@ const pipedInstances = [
   'https://invid-api.poketube.fun'
 ];
 
+import { Readable } from 'stream';
+
 app.get('/piped/*', async (req, res) => {
   const path = req.path.replace('/piped', '');
   const query = new URLSearchParams(req.query).toString();
 
-  for (const base of pipedInstances) {
+  // 全インスタンスへ同時アクセス
+  const requests = pipedInstances.map(async (base) => {
     const targetUrl = `${base}${path}${query ? '?' + query : ''}`;
-    try {
-      const response = await fetch(targetUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-      });
 
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        res.setHeader('Content-Type', contentType || 'application/json');
-        return response.body.pipe(res);
+    const response = await fetch(targetUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
-      console.log(`Instance ${base} failed with ${response.status}`);
-    } catch (e) {
-      console.error(`Instance ${base} error:`, e.message);
-    }
-  }
+    });
 
-  res.status(503).json({ error: 'All Piped instances failed' });
+    if (!response.ok) {
+      throw new Error(`${base} failed with ${response.status}`);
+    }
+
+    return response;
+  });
+
+  try {
+    // 最初に成功したレスポンスを取得
+    const response = await Promise.any(requests);
+
+    const contentType = response.headers.get('content-type');
+
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
+    }
+
+    // Web Stream → Node Stream
+    const stream = Readable.fromWeb(response.body);
+
+    stream.pipe(res);
+
+  } catch (err) {
+    console.error('All instances failed:', err);
+
+    res.status(503).json({
+      error: 'All Piped instances failed'
+    });
+  }
 });
 
 app.get("/download", async (req, res) => {
