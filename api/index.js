@@ -710,5 +710,157 @@ window.WebSocket = function(url, protocols){
 })
 
 
+import crypto from 'crypto';   // すでにあれば不要
+
+// デバイスIDを生成・検証するヘルパー（フロントで固定IDを使う場合は不要だが、安全のため）
+function getDeviceIdFromHeader(req) {
+  let deviceId = req.headers['x-device-id'];
+  if (!deviceId || deviceId.length < 10) {
+    deviceId = crypto.randomBytes(16).toString('hex');
+  }
+  return deviceId;
+}
+
+app.get('/api/notifications', async (req, res) => {
+  const deviceId = req.headers['x-device-id'];
+  if (!deviceId) {
+    return res.status(400).json({ error: 'Missing device-id' });
+  }
+
+  const today = new Date().toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }).split('T')[0];
+  // ISO 形式 YYYY-MM-DD に変換（日本時間）
+  const jstDate = new Date().toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit' }).replace(/\//g, '-');
+
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'DB error' });
+  }
+
+  // 既に表示済みの ID を取得
+  const { data: dismissed } = await supabase
+    .from('notification_dismissals')
+    .select('notification_id')
+    .eq('device_id', deviceId)
+    .eq('dismissed_date', jstDate);
+
+  const dismissedIds = new Set(dismissed?.map(d => d.notification_id) || []);
+
+  const activeNotifications = data.filter(n => !dismissedIds.has(n.id));
+
+  res.json(activeNotifications);
+});
+
+app.post('/api/notifications/dismiss', async (req, res) => {
+  const { notificationId } = req.body;
+  const deviceId = req.headers['x-device-id'];
+  if (!deviceId || !notificationId) {
+    return res.status(400).json({ error: 'Missing parameters' });
+  }
+
+  const jstDate = new Date().toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit' }).replace(/\//g, '-');
+
+  const { error } = await supabase
+    .from('notification_dismissals')
+    .insert({
+      notification_id: notificationId,
+      device_id: deviceId,
+      dismissed_date: jstDate
+    });
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Insert failed' });
+  }
+  res.json({ success: true });
+});
+
+
+
+app.get('/api/maintenance', async (req, res) => {
+  const now = new Date();
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('type', 'maintenance')
+    .eq('is_active', true)
+    .lte('scheduled_start', now.toISOString())
+    .gte('scheduled_end', now.toISOString())
+    .maybeSingle();
+
+  if (error) {
+    return res.status(500).json({ error: 'DB error' });
+  }
+  if (data) {
+    return res.json({
+      active: true,
+      action: data.maintenance_action, // 0 or 1
+      title: data.title,
+      content: data.content,
+      start: data.scheduled_start,
+      end: data.scheduled_end
+    });
+  }
+  res.json({ active: false });
+});
+
+// 管理画面用の簡易認証 (session を使わず、/admin-login でトークンを返す)
+let adminToken = null;
+const ADMIN_ID = process.env.ADMIN_ID;
+const ADMIN_PW = process.env.ADMIN_PASSWORD;
+
+app.post('/admin/login', express.json(), (req, res) => {
+  const { id, password } = req.body;
+  if (id === ADMIN_ID && password === ADMIN_PW) {
+    adminToken = crypto.randomBytes(32).toString('hex');
+    // 有効期限 1時間
+    setTimeout(() => { adminToken = null; }, 60 * 60 * 1000);
+    res.json({ token: adminToken });
+  } else {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+});
+
+// 認証ミドルウェア
+function requireAdmin(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token || token !== adminToken) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+// お知らせ作成
+app.post('/admin/notifications', requireAdmin, express.json(), async (req, res) => {
+  const { title, content, type, scheduled_start, scheduled_end, maintenance_action, is_active } = req.body;
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert({
+      title, content, type,
+      scheduled_start: scheduled_start || null,
+      scheduled_end: scheduled_end || null,
+      maintenance_action: maintenance_action || 0,
+      is_active: is_active ?? true
+    })
+    .select();
+  if (error) return res.status(500).json({ error });
+  res.json(data[0]);
+});
+
+// お知らせ更新・削除も同様に実装（省略可だが必須）
+
+// 管理者用HTMLを /admin で配信（認証はフロントで行う）
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/admin.html'));
+});
+
+
+
+
 // api/index.js の最後
 export default app;
