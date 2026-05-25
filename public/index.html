@@ -31,9 +31,14 @@
     <input id="searchInput" placeholder="検索" autocomplete="off" />
   </div>
   <!-- 右端アクション -->
-  <div class="actions">
-    <div title="アカウント" style="width:36px;height:36px;border-radius:50%;background:#eee"></div>
-  </div>
+<!-- 以前の <div title="アカウント"... を削除し、以下に置き換え -->
+<div class="notification-bell" id="notificationBell" style="cursor:pointer; position:relative;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    <circle id="notificationBadge" cx="18" cy="6" r="3" fill="red" stroke="none" style="display:none;"/>
+  </svg>
+</div>
 </header>
 
 <!-- サイドメニュー -->
