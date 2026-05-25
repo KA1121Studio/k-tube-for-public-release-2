@@ -376,8 +376,17 @@ app.get('/piped/*', async (req, res) => {
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`${base} failed with ${response.status}`);
+    const contentType =
+      response.headers.get('content-type') || '';
+
+    // JSON以外を拒否
+    if (
+      !response.ok ||
+      !contentType.includes('application/json')
+    ) {
+      throw new Error(
+        `${base} returned invalid content`
+      );
     }
 
     return response;
@@ -393,7 +402,6 @@ app.get('/piped/*', async (req, res) => {
       contentType || 'application/json'
     );
 
-    // ここ重要
     return response.body.pipe(res);
 
   } catch (err) {
