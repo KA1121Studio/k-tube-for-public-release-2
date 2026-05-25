@@ -361,13 +361,10 @@ const pipedInstances = [
   'https://invid-api.poketube.fun'
 ];
 
-import { Readable } from 'stream';
-
 app.get('/piped/*', async (req, res) => {
   const path = req.path.replace('/piped', '');
   const query = new URLSearchParams(req.query).toString();
 
-  // 全インスタンスへ同時アクセス
   const requests = pipedInstances.map(async (base) => {
     const targetUrl = `${base}${path}${query ? '?' + query : ''}`;
 
@@ -387,22 +384,20 @@ app.get('/piped/*', async (req, res) => {
   });
 
   try {
-    // 最初に成功したレスポンスを取得
     const response = await Promise.any(requests);
 
     const contentType = response.headers.get('content-type');
 
-    if (contentType) {
-      res.setHeader('Content-Type', contentType);
-    }
+    res.setHeader(
+      'Content-Type',
+      contentType || 'application/json'
+    );
 
-    // Web Stream → Node Stream
-    const stream = Readable.fromWeb(response.body);
-
-    stream.pipe(res);
+    // ここ重要
+    return response.body.pipe(res);
 
   } catch (err) {
-    console.error('All instances failed:', err);
+    console.error(err);
 
     res.status(503).json({
       error: 'All Piped instances failed'
