@@ -1010,7 +1010,69 @@ app.get('/admin/notifications', requireAdmin, async (req, res) => {
   res.json(data);
 });
 
+// ======================
+// メンテナンス即時開始・終了 API
+// ======================
 
+// 現在アクティブなメンテナンスを取得
+app.get('/api/admin/maintenance/active', requireAdmin, async (req, res) => {
+  const now = new Date();
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('type', 'maintenance')
+    .eq('is_active', true)
+    .lte('scheduled_start', now.toISOString())
+    .gte('scheduled_end', now.toISOString())
+    .maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || null);
+});
+
+// メンテナンス即時開始
+app.post('/api/admin/maintenance/start', requireAdmin, express.json(), async (req, res) => {
+  const { title, content, maintenance_action } = req.body;
+  const now = new Date();
+  const end = new Date(now.getTime() + 60 * 60 * 1000); // 1時間後
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert({
+      title: title || 'メンテナンス中',
+      content: content || 'システムメンテナンスを実施しています。ご不便をおかけします。',
+      type: 'maintenance',
+      scheduled_start: now.toISOString(),
+      scheduled_end: end.toISOString(),
+      maintenance_action: maintenance_action || 1,
+      is_active: true
+    })
+    .select();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true, notification: data[0] });
+});
+
+// メンテナンス停止（アクティブなメンテナンスを終了）
+app.post('/api/admin/maintenance/stop', requireAdmin, async (req, res) => {
+  const now = new Date();
+  // 現在アクティブなメンテナンスを検索
+  const { data: active, error: findError } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('type', 'maintenance')
+    .eq('is_active', true)
+    .lte('scheduled_start', now.toISOString())
+    .gte('scheduled_end', now.toISOString());
+  if (findError) return res.status(500).json({ error: findError.message });
+  if (!active || active.length === 0) {
+    return res.json({ success: false, message: '現在アクティブなメンテナンスはありません' });
+  }
+  // 終了日時を現在に更新（またはis_activeをfalseに）
+  const { error: updateError } = await supabase
+    .from('notifications')
+    .update({ scheduled_end: now.toISOString(), is_active: false })
+    .in('id', active.map(n => n.id));
+  if (updateError) return res.status(500).json({ error: updateError.message });
+  res.json({ success: true });
+});
 
 // api/index.js の最後
 export default app;
