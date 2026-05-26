@@ -859,7 +859,7 @@ app.post('/admin/notifications', requireAdmin, express.json(), async (req, res) 
       title, content, type,
       scheduled_start: scheduled_start || null,
       scheduled_end: scheduled_end || null,
-      maintenance_action: maintenance_action || 0,
+      maintenance_action: maintenance_action ?? 0,
       is_active: is_active ?? true
     })
     .select();
@@ -876,7 +876,7 @@ app.put('/admin/notifications/:id', requireAdmin, express.json(), async (req, re
       title, content, type,
       scheduled_start: scheduled_start || null,
       scheduled_end: scheduled_end || null,
-      maintenance_action: maintenance_action || 0,
+      maintenance_action: maintenance_action ?? 0,
       is_active: is_active ?? true,
       updated_at: new Date().toISOString()
     })
@@ -947,7 +947,7 @@ app.post('/api/admin/notifications', requireAdmin, express.json(), async (req, r
       type,
       scheduled_start: scheduled_start || null,
       scheduled_end: scheduled_end || null,
-      maintenance_action: maintenance_action || 0,
+      maintenance_action: maintenance_action ?? 0,
       is_active: is_active ?? true
     })
     .select();
@@ -970,7 +970,7 @@ app.put('/api/admin/notifications/:id', requireAdmin, express.json(), async (req
       type,
       scheduled_start: scheduled_start || null,
       scheduled_end: scheduled_end || null,
-      maintenance_action: maintenance_action || 0,
+      maintenance_action: maintenance_action ?? 0,
       is_active: is_active ?? true,
       updated_at: new Date().toISOString()
     })
@@ -1042,7 +1042,7 @@ app.post('/api/admin/maintenance/start', requireAdmin, express.json(), async (re
       type: 'maintenance',
       scheduled_start: now.toISOString(),
       scheduled_end: end.toISOString(),
-      maintenance_action: maintenance_action || 1,
+      maintenance_action: maintenance_action ?? 1,
       is_active: true
     })
     .select();
