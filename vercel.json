@@ -2,9 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
     { "src": "/proxy/(.*)", "dest": "/api/index.js" },
     { "src": "/piped/(.*)", "dest": "/api/index.js" },
-    { "src": "/api/v2/video", "dest": "/api/index.js" },
     { "src": "/stats", "dest": "/api/index.js" },
     { "src": "/fake-views", "dest": "/api/index.js" },
     { "src": "/Tools/Science/proxy/(.*)", "dest": "/api/index.js" },
