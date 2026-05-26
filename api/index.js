@@ -921,7 +921,7 @@ app.post('/api/admin/login', express.json(), (req, res) => {
     res.status(401).json({ error: 'Unauthorized' });
   }
 });
-2.4 認証ミドルウェ
+
 
 // お知らせ一覧取得（一般ユーザーと同じだが、管理画面でも使いやすいように）
 app.get('/api/admin/notifications', requireAdmin, async (req, res) => {
