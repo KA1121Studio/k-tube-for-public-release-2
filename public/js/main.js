@@ -1572,21 +1572,21 @@ document.getElementById('defaultPlayerSelect')?.addEventListener('change', e => 
       location.reload();
     }
   });
-      // renderSettings() の最後の方にあるバージョン表示部分に id を付与
-// 例: <div id="versionTap">K-tube バージョン 2.32</div>
-// 既存のHTML生成部分を修正する必要あり
 
-// 以下のコードを renderSettings() 内の適切な場所に追記
+      // renderSettings() の中の、バージョン表示部分をこう修正
+// すでに <div id="versionTap">K-tube バージョン 2.32</div> としているので、以下のコードを追加
+
 let tapCount = 0;
-const versionDiv = document.querySelector('#settingsSection .version-tap'); // 実際のセレクタに合わせる
+const versionDiv = document.getElementById('versionTap'); // ← ここを修正
 if (versionDiv) {
+  versionDiv.style.cursor = 'pointer';
   versionDiv.addEventListener('click', () => {
     tapCount++;
     if (tapCount >= 6) {
       if (!document.getElementById('adminLink')) {
         const adminLink = document.createElement('div');
         adminLink.id = 'adminLink';
-        adminLink.innerHTML = '<a href="/admin" target="_blank" style="color:#065fd4;">管理ページへ</a>';
+        adminLink.innerHTML = '<a href="/admin" target="_blank" style="color:#065fd4; margin-top:10px; display:inline-block;">管理ページへ</a>';
         versionDiv.parentNode.appendChild(adminLink);
       }
       tapCount = 0;
@@ -1594,6 +1594,7 @@ if (versionDiv) {
     setTimeout(() => { tapCount = 0; }, 3000);
   });
 }
+      
 }   
 
 
