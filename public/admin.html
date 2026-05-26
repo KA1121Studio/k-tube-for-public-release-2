@@ -1,30 +1,46 @@
-<!-- public/admin.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>管理画面</title>
+  <title>K-tube 管理画面</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
-    .notification-item { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
-    button { margin: 5px; }
+    body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; }
+    .notification-item { border: 1px solid #ddd; margin: 10px 0; padding: 10px; border-radius: 8px; background: #fafafa; }
+    button { margin: 5px; padding: 6px 12px; cursor: pointer; }
     .form-group { margin: 10px 0; }
+    label { margin-right: 15px; }
+    input, textarea, select { padding: 6px; width: 100%; max-width: 400px; }
+    hr { margin: 20px 0; }
+    .error { color: red; }
+    .success { color: green; }
   </style>
 </head>
 <body>
+<div class="container">
   <div id="loginArea">
     <h2>管理者ログイン</h2>
-    <input type="text" id="adminId" placeholder="ID">
-    <input type="password" id="adminPw" placeholder="パスワード">
+    <div class="form-group">
+      <input type="text" id="adminId" placeholder="管理者ID">
+    </div>
+    <div class="form-group">
+      <input type="password" id="adminPw" placeholder="パスワード">
+    </div>
     <button onclick="login()">ログイン</button>
+    <div id="loginError" class="error"></div>
   </div>
+
   <div id="adminArea" style="display:none;">
-    <h2>お知らせ管理</h2>
+    <h2>📢 お知らせ管理</h2>
     <div id="notificationForm">
       <h3>新規作成 / 編集</h3>
       <input type="hidden" id="editId">
-      <div class="form-group"><input type="text" id="title" placeholder="タイトル" style="width:300px;"></div>
-      <div class="form-group"><textarea id="content" placeholder="内容" rows="4" cols="50"></textarea></div>
+      <div class="form-group">
+        <input type="text" id="title" placeholder="タイトル" style="width:100%;">
+      </div>
+      <div class="form-group">
+        <textarea id="content" placeholder="内容" rows="4" style="width:100%;"></textarea>
+      </div>
       <div class="form-group">
         <select id="type">
           <option value="normal">通常お知らせ</option>
@@ -36,27 +52,32 @@
         <input type="datetime-local" id="scheduled_end" placeholder="終了日時">
       </div>
       <div class="form-group">
-        <label><input type="radio" name="action" value="0"> 操作可能</label>
-        <label><input type="radio" name="action" value="1"> 操作不可能</label>
+        <label><input type="radio" name="action" value="0"> 操作可能（警告バーのみ）</label>
+        <label><input type="radio" name="action" value="1" checked> 操作不可能（全面ブロック）</label>
       </div>
       <div class="form-group">
         <label><input type="checkbox" id="is_active" checked> 有効</label>
       </div>
-      <button onclick="saveNotification()">保存</button>
+      <button onclick="saveNotification()">💾 保存</button>
       <button onclick="clearForm()">キャンセル</button>
     </div>
     <hr>
-    <h3>お知らせ一覧</h3>
-    <div id="notificationsList"></div>
+    <h3>📋 お知らせ一覧</h3>
+    <div id="notificationsList">読み込み中...</div>
   </div>
+</div>
 
-  <script>
-    let token = null;
+<script>
+  let token = null;
 
-    async function login() {
-      const id = document.getElementById('adminId').value;
-      const pw = document.getElementById('adminPw').value;
-      const res = await fetch('/admin/login', {
+  async function login() {
+    const id = document.getElementById('adminId').value;
+    const pw = document.getElementById('adminPw').value;
+    const errorDiv = document.getElementById('loginError');
+    errorDiv.innerText = '';
+
+    try {
+      const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, password: pw })
@@ -68,58 +89,89 @@
         document.getElementById('adminArea').style.display = 'block';
         loadNotifications();
       } else {
-        alert('ログイン失敗');
+        const err = await res.json();
+        errorDiv.innerText = 'ログイン失敗: ' + (err.error || 'IDまたはパスワードが間違っています');
       }
+    } catch (e) {
+      errorDiv.innerText = '通信エラー: ' + e.message;
     }
+  }
 
-    async function loadNotifications() {
-      const res = await fetch('/api/notifications', {
-        headers: { 'X-Device-Id': 'admin' } // 管理画面用ダミー
+  async function loadNotifications() {
+    const container = document.getElementById('notificationsList');
+    container.innerHTML = '読み込み中...';
+    try {
+      const res = await fetch('/api/admin/notifications', {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!res.ok) throw new Error('取得失敗');
       const list = await res.json();
-      const container = document.getElementById('notificationsList');
+      if (list.length === 0) {
+        container.innerHTML = '<p>お知らせはありません</p>';
+        return;
+      }
       container.innerHTML = '';
       for (const n of list) {
         const div = document.createElement('div');
         div.className = 'notification-item';
         div.innerHTML = `
-          <strong>${escapeHtml(n.title)}</strong> (${n.type})<br>
-          ${escapeHtml(n.content.substring(0, 100))}<br>
-          <button onclick="editNotification(${n.id})">編集</button>
-          <button onclick="deleteNotification(${n.id})">削除</button>
+          <strong>${escapeHtml(n.title)}</strong> (${n.type === 'maintenance' ? 'メンテナンス' : '通常'}) 
+          ${n.is_active ? '✅ 有効' : '❌ 無効'}<br>
+          <small>${new Date(n.created_at).toLocaleString()}</small><br>
+          ${escapeHtml(n.content.substring(0, 100))}${n.content.length > 100 ? '…' : ''}<br>
+          <button onclick="editNotification(${n.id})">✏️ 編集</button>
+          <button onclick="deleteNotification(${n.id})">🗑️ 削除</button>
         `;
         container.appendChild(div);
       }
+    } catch (e) {
+      container.innerHTML = '<div class="error">読み込みエラー: ' + e.message + '</div>';
     }
+  }
 
-    async function saveNotification() {
-      const id = document.getElementById('editId').value;
-      const payload = {
-        title: document.getElementById('title').value,
-        content: document.getElementById('content').value,
-        type: document.getElementById('type').value,
-        scheduled_start: document.getElementById('scheduled_start').value || null,
-        scheduled_end: document.getElementById('scheduled_end').value || null,
-        maintenance_action: parseInt(document.querySelector('input[name="action"]:checked')?.value || 0),
-        is_active: document.getElementById('is_active').checked
-      };
-      const url = id ? `/admin/notifications/${id}` : '/admin/notifications';
-      const method = id ? 'PUT' : 'POST';
+  async function saveNotification() {
+    const id = document.getElementById('editId').value;
+    const payload = {
+      title: document.getElementById('title').value,
+      content: document.getElementById('content').value,
+      type: document.getElementById('type').value,
+      scheduled_start: document.getElementById('scheduled_start').value || null,
+      scheduled_end: document.getElementById('scheduled_end').value || null,
+      maintenance_action: parseInt(document.querySelector('input[name="action"]:checked')?.value || 0),
+      is_active: document.getElementById('is_active').checked
+    };
+    if (!payload.title || !payload.content) {
+      alert('タイトルと内容は必須です');
+      return;
+    }
+    const url = id ? `/api/admin/notifications/${id}` : '/api/admin/notifications';
+    const method = id ? 'PUT' : 'POST';
+    try {
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(payload)
       });
       if (res.ok) {
         clearForm();
         loadNotifications();
       } else {
-        alert('保存失敗');
+        const err = await res.json();
+        alert('保存失敗: ' + (err.error || '不明なエラー'));
       }
+    } catch (e) {
+      alert('通信エラー: ' + e.message);
     }
+  }
 
-    async function editNotification(id) {
-      const res = await fetch('/api/notifications', { headers: { 'X-Device-Id': 'admin' } });
+  async function editNotification(id) {
+    try {
+      const res = await fetch('/api/admin/notifications', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const list = await res.json();
       const n = list.find(x => x.id == id);
       if (n) {
@@ -127,41 +179,59 @@
         document.getElementById('title').value = n.title;
         document.getElementById('content').value = n.content;
         document.getElementById('type').value = n.type;
-        if (n.scheduled_start) document.getElementById('scheduled_start').value = n.scheduled_start.slice(0,16);
-        if (n.scheduled_end) document.getElementById('scheduled_end').value = n.scheduled_end.slice(0,16);
-        document.querySelector(`input[name="action"][value="${n.maintenance_action}"]`).checked = true;
+        if (n.scheduled_start) document.getElementById('scheduled_start').value = n.scheduled_start.slice(0, 16);
+        else document.getElementById('scheduled_start').value = '';
+        if (n.scheduled_end) document.getElementById('scheduled_end').value = n.scheduled_end.slice(0, 16);
+        else document.getElementById('scheduled_end').value = '';
+        const actionRadio = document.querySelector(`input[name="action"][value="${n.maintenance_action}"]`);
+        if (actionRadio) actionRadio.checked = true;
         document.getElementById('is_active').checked = n.is_active;
+      } else {
+        alert('お知らせが見つかりません');
       }
+    } catch (e) {
+      alert('編集データ読み込みエラー: ' + e.message);
     }
+  }
 
-    async function deleteNotification(id) {
-      if (!confirm('削除しますか？')) return;
-      const res = await fetch(`/admin/notifications/${id}`, {
+  async function deleteNotification(id) {
+    if (!confirm('このお知らせを削除しますか？戻せません。')) return;
+    try {
+      const res = await fetch(`/api/admin/notifications/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) loadNotifications();
-      else alert('削除失敗');
+      if (res.ok) {
+        loadNotifications();
+      } else {
+        const err = await res.json();
+        alert('削除失敗: ' + (err.error || '不明なエラー'));
+      }
+    } catch (e) {
+      alert('通信エラー: ' + e.message);
     }
+  }
 
-    function clearForm() {
-      document.getElementById('editId').value = '';
-      document.getElementById('title').value = '';
-      document.getElementById('content').value = '';
-      document.getElementById('type').value = 'normal';
-      document.getElementById('scheduled_start').value = '';
-      document.getElementById('scheduled_end').value = '';
-      document.getElementById('is_active').checked = true;
-    }
+  function clearForm() {
+    document.getElementById('editId').value = '';
+    document.getElementById('title').value = '';
+    document.getElementById('content').value = '';
+    document.getElementById('type').value = 'normal';
+    document.getElementById('scheduled_start').value = '';
+    document.getElementById('scheduled_end').value = '';
+    document.querySelector('input[name="action"][value="1"]').checked = true;
+    document.getElementById('is_active').checked = true;
+  }
 
-    function escapeHtml(s) {
-      return String(s).replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-      });
-    }
-  </script>
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+</script>
 </body>
 </html>
