@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>K-tube 管理画面</title>
+  <title>管理画面</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -223,7 +223,7 @@
 
     debugLog("ログイン試行: ID =", id);
     try {
-      const res = await fetch('/api/admin/login', {
+      const res = await fetch('/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, password: pw })
@@ -255,7 +255,7 @@
     container.innerHTML = '⏳ 読み込み中...';
     debugLog("お知らせ一覧を取得中...");
     try {
-      const res = await fetch('/api/admin/notifications', {
+      const res = await fetch('/admin/notifications', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       debugLog("一覧API status:", res.status);
@@ -316,7 +316,7 @@
       is_active: document.getElementById('is_active').checked
     };
     debugLog("保存するデータ:", payload);
-    const url = id ? `/api/admin/notifications/${id}` : '/api/admin/notifications';
+    const url = id ? `/admin/notifications/${id}` : '/admin/notifications';
     const method = id ? 'PUT' : 'POST';
     try {
       const res = await fetch(url, {
@@ -349,7 +349,7 @@
   async function editNotification(id) {
     debugLog("編集対象ID:", id);
     try {
-      const res = await fetch('/api/admin/notifications', {
+      const res = await fetch('/admin/notifications', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("一覧取得失敗");
@@ -394,7 +394,7 @@
     if (!confirm("本当に削除しますか？この操作は元に戻せません。")) return;
     debugLog("削除対象ID:", id);
     try {
-      const res = await fetch(`/api/admin/notifications/${id}`, {
+      const res = await fetch(`/admin/notifications/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
