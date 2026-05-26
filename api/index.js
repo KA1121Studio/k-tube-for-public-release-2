@@ -888,6 +888,95 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin.html'));
 });
 
+// ======================
+// 管理画面API（/api/admin/ 配下に統一）
+// ======================
+
+// 管理者ログイン（新しいパス）
+app.post('/api/admin/login', express.json(), (req, res) => {
+  const { id, password } = req.body;
+  if (id === ADMIN_ID && password === ADMIN_PW) {
+    adminToken = crypto.randomBytes(32).toString('hex');
+    setTimeout(() => { adminToken = null; }, 60 * 60 * 1000);
+    res.json({ token: adminToken });
+  } else {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+});
+
+// お知らせ一覧取得（一般ユーザーと同じだが、管理画面でも使いやすいように）
+app.get('/api/admin/notifications', requireAdmin, async (req, res) => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'DB error' });
+  }
+  res.json(data);
+});
+
+// お知らせ作成
+app.post('/api/admin/notifications', requireAdmin, express.json(), async (req, res) => {
+  const { title, content, type, scheduled_start, scheduled_end, maintenance_action, is_active } = req.body;
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert({
+      title,
+      content,
+      type,
+      scheduled_start: scheduled_start || null,
+      scheduled_end: scheduled_end || null,
+      maintenance_action: maintenance_action || 0,
+      is_active: is_active ?? true
+    })
+    .select();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
+  res.json(data[0]);
+});
+
+// お知らせ更新
+app.put('/api/admin/notifications/:id', requireAdmin, express.json(), async (req, res) => {
+  const { id } = req.params;
+  const { title, content, type, scheduled_start, scheduled_end, maintenance_action, is_active } = req.body;
+  const { data, error } = await supabase
+    .from('notifications')
+    .update({
+      title,
+      content,
+      type,
+      scheduled_start: scheduled_start || null,
+      scheduled_end: scheduled_end || null,
+      maintenance_action: maintenance_action || 0,
+      is_active: is_active ?? true,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
+  res.json(data[0]);
+});
+
+// お知らせ削除（物理削除）
+app.delete('/api/admin/notifications/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', id);
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
+  res.json({ success: true });
+});
 
 
 
