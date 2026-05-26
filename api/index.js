@@ -3,6 +3,7 @@ import fetch from "node-fetch";
 import { fileURLToPath } from "url";
 import path from "path";
 import { execSync } from "child_process";   
+import jwt from 'jsonwebtoken';
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -810,17 +811,21 @@ app.get('/api/maintenance', async (req, res) => {
 });
 
 // 管理画面用の簡易認証 (session を使わず、/admin-login でトークンを返す)
-let adminToken = null;
+
 const ADMIN_ID = process.env.ADMIN_ID;
 const ADMIN_PW = process.env.ADMIN_PASSWORD;
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
 app.post('/admin/login', express.json(), (req, res) => {
   const { id, password } = req.body;
   if (id === ADMIN_ID && password === ADMIN_PW) {
-    adminToken = crypto.randomBytes(32).toString('hex');
-    // 有効期限 1時間
-    setTimeout(() => { adminToken = null; }, 60 * 60 * 1000);
-    res.json({ token: adminToken });
+    // JWTを発行（有効期限1時間）
+    const token = jwt.sign(
+      { admin: true },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    res.json({ token });
   } else {
     res.status(401).json({ error: 'Unauthorized' });
   }
@@ -828,11 +833,21 @@ app.post('/admin/login', express.json(), (req, res) => {
 
 // 認証ミドルウェア
 function requireAdmin(req, res, next) {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token || token !== adminToken) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  next();
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.admin) {
+      return next(); // 認証成功
+    }
+    throw new Error('Invalid token payload');
+  } catch (err) {
+    console.error('[Auth] JWT verification failed:', err.message);
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 }
 
 // お知らせ作成
@@ -896,13 +911,17 @@ app.get('/admin', (req, res) => {
 app.post('/api/admin/login', express.json(), (req, res) => {
   const { id, password } = req.body;
   if (id === ADMIN_ID && password === ADMIN_PW) {
-    adminToken = crypto.randomBytes(32).toString('hex');
-    setTimeout(() => { adminToken = null; }, 60 * 60 * 1000);
-    res.json({ token: adminToken });
+    const token = jwt.sign(
+      { admin: true },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    res.json({ token });
   } else {
     res.status(401).json({ error: 'Unauthorized' });
   }
 });
+2.4 認証ミドルウェ
 
 // お知らせ一覧取得（一般ユーザーと同じだが、管理画面でも使いやすいように）
 app.get('/api/admin/notifications', requireAdmin, async (req, res) => {
