@@ -1944,7 +1944,7 @@ async function checkMaintenance() {
           banner.className = 'maintenance-card-popup';
           banner.innerHTML = `
             <div class="maintenance-card-header">
-              <span>⚠️ メンテナンス予告</span>
+              <span>⚠️ メンテナンス中</span>
               <button id="closeMaintenanceCard" style="background:none; border:none; font-size:20px; cursor:pointer;">×</button>
             </div>
             <div class="maintenance-card-body">
@@ -1957,7 +1957,7 @@ async function checkMaintenance() {
           document.getElementById('closeMaintenanceCard')?.addEventListener('click', () => {
             banner.remove();
           });
-          // 5秒後に自動で閉じる（任意）
+          // 50秒後に自動で閉じる（任意）
           setTimeout(() => { if (banner.parentNode) banner.remove(); }, 10000);
         }
       }
