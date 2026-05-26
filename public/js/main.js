@@ -1857,21 +1857,56 @@ async function renderNotificationList() {
 function showNotificationDetail(notif) {
   const modal = document.createElement('div');
   modal.className = 'notification-detail-modal';
+  
+  // メンテナンスかどうかで追加情報を表示
+  let extraInfo = '';
+  if (notif.type === 'maintenance') {
+    const startDate = notif.scheduled_start ? new Date(notif.scheduled_start).toLocaleString() : '未設定';
+    const endDate = notif.scheduled_end ? new Date(notif.scheduled_end).toLocaleString() : '未設定';
+    const actionText = notif.maintenance_action === 0 ? '⚠️ 操作可能（警告のみ表示）' : '🚫 操作不可能（全面ブロック）';
+    extraInfo = `
+      <div class="detail-section">
+        <h4>🔧 メンテナンス情報</h4>
+        <p><strong>開始:</strong> ${startDate}</p>
+        <p><strong>終了:</strong> ${endDate}</p>
+        <p><strong>動作モード:</strong> ${actionText}</p>
+      </div>
+    `;
+  }
+  
   modal.innerHTML = `
     <div class="modal-content">
       <div class="modal-header">
-        <h3>${escapeHtml(notif.title)}</h3>
-        <button class="modal-close">×</button>
+        <h3>📢 ${escapeHtml(notif.title)}</h3>
+        <button class="modal-close">&times;</button>
       </div>
-      <div class="modal-body">${escapeHtml(notif.content).replace(/\n/g, '<br>')}</div>
+      <div class="modal-body">
+        <div class="detail-meta">
+          <span>📅 作成日: ${new Date(notif.created_at).toLocaleString()}</span>
+          <span>🏷️ 種類: ${notif.type === 'maintenance' ? 'メンテナンス' : '通常お知らせ'}</span>
+        </div>
+        ${extraInfo}
+        <div class="detail-content">
+          <h4>📄 内容</h4>
+          <div class="content-text">${escapeHtml(notif.content).replace(/\n/g, '<br>')}</div>
+        </div>
+      </div>
       <div class="modal-footer">
         <button class="modal-close-btn">閉じる</button>
       </div>
     </div>
   `;
+  
   document.body.appendChild(modal);
+  
   const closeModal = () => modal.remove();
-  modal.querySelectorAll('.modal-close, .modal-close-btn').forEach(btn => btn.onclick = closeModal);
+  modal.querySelectorAll('.modal-close, .modal-close-btn').forEach(btn => {
+    btn.addEventListener('click', closeModal);
+  });
+  // 背景クリックでも閉じる
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
 }
 
 document.getElementById('notificationBell')?.addEventListener('click', (e) => {
