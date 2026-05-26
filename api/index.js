@@ -851,7 +851,36 @@ app.post('/admin/notifications', requireAdmin, express.json(), async (req, res) 
   if (error) return res.status(500).json({ error });
   res.json(data[0]);
 });
+// お知らせ更新
+app.put('/admin/notifications/:id', requireAdmin, express.json(), async (req, res) => {
+  const { id } = req.params;
+  const { title, content, type, scheduled_start, scheduled_end, maintenance_action, is_active } = req.body;
+  const { data, error } = await supabase
+    .from('notifications')
+    .update({
+      title, content, type,
+      scheduled_start: scheduled_start || null,
+      scheduled_end: scheduled_end || null,
+      maintenance_action: maintenance_action || 0,
+      is_active: is_active ?? true,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select();
+  if (error) return res.status(500).json({ error });
+  res.json(data[0]);
+});
 
+// お知らせ削除（物理削除ではなく論理削除でも可）
+app.delete('/admin/notifications/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', id);
+  if (error) return res.status(500).json({ error });
+  res.json({ success: true });
+});
 // お知らせ更新・削除も同様に実装（省略可だが必須）
 
 // 管理者用HTMLを /admin で配信（認証はフロントで行う）
