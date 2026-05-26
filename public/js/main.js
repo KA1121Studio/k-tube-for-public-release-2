@@ -1573,20 +1573,20 @@ document.getElementById('defaultPlayerSelect')?.addEventListener('change', e => 
     }
   });
 
-      // renderSettings() の中の、バージョン表示部分をこう修正
-// すでに <div id="versionTap">K-tube バージョン 2.32</div> としているので、以下のコードを追加
-
+// ========== バージョンタップで管理者リンクを表示 ==========
 let tapCount = 0;
-const versionDiv = document.getElementById('versionTap'); // ← ここを修正
+const versionDiv = document.getElementById('versionTap');
 if (versionDiv) {
   versionDiv.style.cursor = 'pointer';
+  versionDiv.style.userSelect = 'none';
   versionDiv.addEventListener('click', () => {
     tapCount++;
     if (tapCount >= 6) {
       if (!document.getElementById('adminLink')) {
         const adminLink = document.createElement('div');
         adminLink.id = 'adminLink';
-        adminLink.innerHTML = '<a href="/admin" target="_blank" style="color:#065fd4; margin-top:10px; display:inline-block;">管理ページへ</a>';
+        adminLink.style.marginTop = '12px';
+        adminLink.innerHTML = '<a href="/admin.html" target="_blank" style="color:#065fd4; text-decoration:underline; font-weight:bold;">🔧 管理ページへ</a>';
         versionDiv.parentNode.appendChild(adminLink);
       }
       tapCount = 0;
@@ -1594,7 +1594,6 @@ if (versionDiv) {
     setTimeout(() => { tapCount = 0; }, 3000);
   });
 }
-      
 }   
 
 
