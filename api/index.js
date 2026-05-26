@@ -978,6 +978,19 @@ app.delete('/api/admin/notifications/:id', requireAdmin, async (req, res) => {
   res.json({ success: true });
 });
 
+// GET /admin/notifications - お知らせ一覧（管理画面用）
+app.get('/admin/notifications', requireAdmin, async (req, res) => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
+  res.json(data);
+});
+
 
 
 // api/index.js の最後
