@@ -1714,7 +1714,10 @@ function getDeviceId() {
 
 let currentUnreadCount = 0;
 
-async function fetchUnreadNotifications() {
+// 既存の fetchUnreadNotifications を置き換え（自動表示フラグ追加）
+let lastAutoPopupDate = localStorage.getItem('lastAutoPopupDate') || '';
+
+async function fetchUnreadNotifications(autoShow = false) {
   const deviceId = getDeviceId();
   try {
     const res = await fetch('/api/notifications', {
@@ -1726,6 +1729,13 @@ async function fetchUnreadNotifications() {
     if (badge) {
       badge.style.display = currentUnreadCount > 0 ? 'block' : 'none';
     }
+    // 自動表示の条件：autoShow=true かつ 今日まだポップアップを表示していない かつ 未読あり
+    const today = new Date().toISOString().slice(0, 10);
+    if (autoShow && list.length > 0 && lastAutoPopupDate !== today) {
+      lastAutoPopupDate = today;
+      localStorage.setItem('lastAutoPopupDate', today);
+      showAutoNotificationPopup(list);
+    }
     return list;
   } catch(e) {
     console.warn(e);
@@ -1733,30 +1743,78 @@ async function fetchUnreadNotifications() {
   }
 }
 
-let popupElement = null;
-
-function showNotificationPopup() {
+// 自動表示用ポップアップ（より目立つデザイン、閉じるボタン付き）
+function showAutoNotificationPopup(notifications) {
+  // 既存ポップアップがあれば削除
   if (popupElement) popupElement.remove();
   
   const popup = document.createElement('div');
-  popup.className = 'notification-popup';
-  popup.innerHTML = `<div class="header">📢 お知らせ</div><div id="popupList"></div>`;
+  popup.className = 'notification-popup auto';
+  popup.innerHTML = `
+    <div class="popup-header">
+      <span>📢 新着お知らせ</span>
+      <button class="close-popup" id="closeAutoPopup">×</button>
+    </div>
+    <div class="popup-body" id="autoPopupBody"></div>
+    <div class="popup-footer">
+      <button id="viewAllNotifications">一覧を見る</button>
+    </div>
+  `;
   document.body.appendChild(popup);
-  popupElement = popup;
-
-  // クリックで閉じる（popup外）
-  setTimeout(() => {
-    document.addEventListener('click', function onClickOutside(e) {
-      if (!popup.contains(e.target) && !document.getElementById('notificationBell').contains(e.target)) {
+  
+  // スタイルを追加（CSSに後で記述）
+  const bodyDiv = document.getElementById('autoPopupBody');
+  notifications.slice(0, 3).forEach(notif => {
+    const item = document.createElement('div');
+    item.className = 'popup-item';
+    item.innerHTML = `
+      <div class="popup-title">${escapeHtml(notif.title)}</div>
+      <div class="popup-content">${escapeHtml(notif.content).substring(0, 100)}${notif.content.length > 100 ? '…' : ''}</div>
+      <button class="popup-detail" data-id="${notif.id}">詳細</button>
+    `;
+    bodyDiv.appendChild(item);
+  });
+  if (notifications.length > 3) {
+    bodyDiv.innerHTML += `<div class="popup-more">他 ${notifications.length - 3} 件</div>`;
+  }
+  
+  // 閉じるボタン
+  document.getElementById('closeAutoPopup').onclick = () => popup.remove();
+  // 一覧を見る
+  document.getElementById('viewAllNotifications').onclick = () => {
+    popup.remove();
+    showNotificationPopup(); // 通常のポップアップ（一覧）
+  };
+  // 詳細ボタン
+  document.querySelectorAll('.popup-detail').forEach(btn => {
+    btn.onclick = async (e) => {
+      const id = parseInt(btn.dataset.id);
+      const notif = notifications.find(n => n.id === id);
+      if (notif) {
+        showNotificationDetail(notif);
+        // 既読処理
+        await fetch('/api/notifications/dismiss', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Device-Id': getDeviceId() },
+          body: JSON.stringify({ notificationId: notif.id })
+        });
+        // ポップアップを閉じて再読み込み
         popup.remove();
-        popupElement = null;
-        document.removeEventListener('click', onClickOutside);
+        fetchUnreadNotifications(true);
       }
-    });
-  }, 10);
-
-  renderNotificationList();
+    };
+  });
+  
+  // 5秒後に自動で閉じる（任意）
+  setTimeout(() => { if (popup.parentNode) popup.remove(); }, 15000);
 }
+
+// ページロード時に自動表示チェック
+window.addEventListener('load', () => {
+  fetch('/fake-views?times=1').catch(()=>{});
+  fetchUnreadNotifications(true); // ← 自動表示有効
+  checkMaintenance();
+});
 
 async function renderNotificationList() {
   const listContainer = document.getElementById('popupList');
