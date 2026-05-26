@@ -1,31 +1,167 @@
+<!-- public/admin.html -->
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>K-tube管理</title></head>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管理画面</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    .notification-item { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+    button { margin: 5px; }
+    .form-group { margin: 10px 0; }
+  </style>
+</head>
 <body>
-  <div id="loginForm">
-    <input id="adminId" placeholder="ID"><input id="adminPw" type="password" placeholder="PW">
+  <div id="loginArea">
+    <h2>管理者ログイン</h2>
+    <input type="text" id="adminId" placeholder="ID">
+    <input type="password" id="adminPw" placeholder="パスワード">
     <button onclick="login()">ログイン</button>
   </div>
-  <div id="adminPanel" style="display:none;">
-    <!-- お知らせフォームなど -->
+  <div id="adminArea" style="display:none;">
+    <h2>お知らせ管理</h2>
+    <div id="notificationForm">
+      <h3>新規作成 / 編集</h3>
+      <input type="hidden" id="editId">
+      <div class="form-group"><input type="text" id="title" placeholder="タイトル" style="width:300px;"></div>
+      <div class="form-group"><textarea id="content" placeholder="内容" rows="4" cols="50"></textarea></div>
+      <div class="form-group">
+        <select id="type">
+          <option value="normal">通常お知らせ</option>
+          <option value="maintenance">メンテナンス</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <input type="datetime-local" id="scheduled_start" placeholder="開始日時">
+        <input type="datetime-local" id="scheduled_end" placeholder="終了日時">
+      </div>
+      <div class="form-group">
+        <label><input type="radio" name="action" value="0"> 操作可能</label>
+        <label><input type="radio" name="action" value="1"> 操作不可能</label>
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="is_active" checked> 有効</label>
+      </div>
+      <button onclick="saveNotification()">保存</button>
+      <button onclick="clearForm()">キャンセル</button>
+    </div>
+    <hr>
+    <h3>お知らせ一覧</h3>
+    <div id="notificationsList"></div>
   </div>
+
   <script>
     let token = null;
+
     async function login() {
+      const id = document.getElementById('adminId').value;
+      const pw = document.getElementById('adminPw').value;
       const res = await fetch('/admin/login', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ id: adminId.value, password: adminPw.value })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, password: pw })
       });
       if (res.ok) {
         const data = await res.json();
         token = data.token;
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('loginArea').style.display = 'none';
+        document.getElementById('adminArea').style.display = 'block';
         loadNotifications();
-      } else alert('ログイン失敗');
+      } else {
+        alert('ログイン失敗');
+      }
     }
-    // 以下、CRUD操作を fetch で実装（要 requireAdmin ヘッダー付与）
+
+    async function loadNotifications() {
+      const res = await fetch('/api/notifications', {
+        headers: { 'X-Device-Id': 'admin' } // 管理画面用ダミー
+      });
+      const list = await res.json();
+      const container = document.getElementById('notificationsList');
+      container.innerHTML = '';
+      for (const n of list) {
+        const div = document.createElement('div');
+        div.className = 'notification-item';
+        div.innerHTML = `
+          <strong>${escapeHtml(n.title)}</strong> (${n.type})<br>
+          ${escapeHtml(n.content.substring(0, 100))}<br>
+          <button onclick="editNotification(${n.id})">編集</button>
+          <button onclick="deleteNotification(${n.id})">削除</button>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    async function saveNotification() {
+      const id = document.getElementById('editId').value;
+      const payload = {
+        title: document.getElementById('title').value,
+        content: document.getElementById('content').value,
+        type: document.getElementById('type').value,
+        scheduled_start: document.getElementById('scheduled_start').value || null,
+        scheduled_end: document.getElementById('scheduled_end').value || null,
+        maintenance_action: parseInt(document.querySelector('input[name="action"]:checked')?.value || 0),
+        is_active: document.getElementById('is_active').checked
+      };
+      const url = id ? `/admin/notifications/${id}` : '/admin/notifications';
+      const method = id ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        clearForm();
+        loadNotifications();
+      } else {
+        alert('保存失敗');
+      }
+    }
+
+    async function editNotification(id) {
+      const res = await fetch('/api/notifications', { headers: { 'X-Device-Id': 'admin' } });
+      const list = await res.json();
+      const n = list.find(x => x.id == id);
+      if (n) {
+        document.getElementById('editId').value = n.id;
+        document.getElementById('title').value = n.title;
+        document.getElementById('content').value = n.content;
+        document.getElementById('type').value = n.type;
+        if (n.scheduled_start) document.getElementById('scheduled_start').value = n.scheduled_start.slice(0,16);
+        if (n.scheduled_end) document.getElementById('scheduled_end').value = n.scheduled_end.slice(0,16);
+        document.querySelector(`input[name="action"][value="${n.maintenance_action}"]`).checked = true;
+        document.getElementById('is_active').checked = n.is_active;
+      }
+    }
+
+    async function deleteNotification(id) {
+      if (!confirm('削除しますか？')) return;
+      const res = await fetch(`/admin/notifications/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) loadNotifications();
+      else alert('削除失敗');
+    }
+
+    function clearForm() {
+      document.getElementById('editId').value = '';
+      document.getElementById('title').value = '';
+      document.getElementById('content').value = '';
+      document.getElementById('type').value = 'normal';
+      document.getElementById('scheduled_start').value = '';
+      document.getElementById('scheduled_end').value = '';
+      document.getElementById('is_active').checked = true;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      });
+    }
   </script>
 </body>
 </html>
