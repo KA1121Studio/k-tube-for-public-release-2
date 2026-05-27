@@ -15,6 +15,44 @@
 </head>
 <body>
 
+  <script>
+  (function() {
+    // URLパラメータからプレビュートークンを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const previewToken = urlParams.get('preview');
+    
+    if (previewToken) {
+      // ローカルストレージからトークンを検証
+      const stored = localStorage.getItem('ktube_preview_token');
+      if (stored) {
+        try {
+          const { token, expires } = JSON.parse(stored);
+          if (token === previewToken && expires > Date.now()) {
+            // 認証成功 → プレビューモードを有効にするフラグをセッションストレージに保存
+            sessionStorage.setItem('ktube_preview_mode', 'true');
+            // 使い捨てトークンは削除（再利用防止）
+            localStorage.removeItem('ktube_preview_token');
+            // URLからパラメータを取り除いてリロード（履歴をきれいに）
+            window.history.replaceState({}, document.title, window.location.pathname);
+            // プレビューモードになったことをコンソールに表示
+            console.log('[Preview] 管理プレビューモードが有効になりました');
+            return;
+          }
+        } catch(e) {}
+      }
+      // 認証失敗：権限なし画面を表示
+      document.body.innerHTML = `
+        <div style="position:fixed; top:0; left:0; right:0; bottom:0; background:white; z-index:99999; display:flex; align-items:center; justify-content:center; flex-direction:column; font-family:sans-serif;">
+          <h1 style="color:#c00;">⛔ アクセス権限がありません</h1>
+          <p>このページは管理用です。</p>
+          <button onclick="location.href='/'" style="margin-top:20px; padding:10px 24px; background:#065fd4; color:white; border:none; border-radius:40px; cursor:pointer;">ホームに戻る</button>
+        </div>
+      `;
+      throw new Error('Preview unauthorized');
+    }
+  })();
+</script>
+
 <header>
   <!-- メニュー（hamburger）ボタン -->
   <div class="menu-btn" id="menuBtn" title="メニュー">
