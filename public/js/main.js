@@ -1915,6 +1915,16 @@ document.getElementById('notificationBell')?.addEventListener('click', (e) => {
 });
 
 async function checkMaintenance() {
+
+        if (sessionStorage.getItem('ktube_preview_mode') === 'true') {
+    // 既存のメンテナンス表示を削除
+    document.querySelector('.maintenance-overlay-full')?.remove();
+    document.getElementById('maintenanceCard')?.remove();
+    document.body.style.pointerEvents = '';
+    document.body.style.overflow = '';
+    return;
+  }
+      
   try {
     const res = await fetch('/api/maintenance');
     const data = await res.json();
