@@ -119,6 +119,11 @@
 </head>
 <body>
 <div class="container">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid #ddd;">
+  <h1 style="margin:0;">K-tube 管理画面</h1>
+  <button id="openPreviewBtn" style="background: #28a745; padding: 8px 20px;">🔍 管理用プレビューを開く</button>
+</div>
+  
   <div id="loginArea" style="padding: 40px; text-align: center;">
     <h2>🔐 管理者ログイン</h2>
     <input type="text" id="adminId" placeholder="管理者ID" style="width: 300px; margin: 10px;"><br>
@@ -411,6 +416,19 @@
       alert(data.message || '停止失敗');
     }
   });
+
+  // 管理用プレビューを開く
+document.getElementById('openPreviewBtn')?.addEventListener('click', async () => {
+  // プレビュー用トークンを生成（1時間有効）
+  const token = crypto.randomUUID();
+  const expires = Date.now() + 60 * 60 * 1000;
+  const previewData = { token, expires };
+  localStorage.setItem('ktube_preview_token', JSON.stringify(previewData));
+  
+  // プレビュー用URL（トークンをクエリに含める）
+  const previewUrl = `/?preview=${token}`;
+  window.open(previewUrl, '_blank');
+});
 
   function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 </script>
