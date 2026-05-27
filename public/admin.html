@@ -421,15 +421,12 @@
   });
 
   // 管理用プレビューを開く
-// 管理用プレビューを開く（blob: URL で埋め込み表示）
 document.getElementById('openPreviewBtn')?.addEventListener('click', async () => {
-  // プレビュー用トークンを生成（1時間有効）
   const token = crypto.randomUUID();
   const expires = Date.now() + 60 * 60 * 1000;
-  const previewData = { token, expires };
-  localStorage.setItem('ktube_preview_token', JSON.stringify(previewData));
-  
-  // プレビューを表示する HTML を生成（iframe で埋め込む）
+  localStorage.setItem('ktube_preview_token', JSON.stringify({ token, expires }));
+
+  const baseUrl = window.location.origin; // https://k-tube-for-public-release-2.vercel.app
   const previewHtml = `
 <!DOCTYPE html>
 <html lang="ja">
@@ -437,45 +434,25 @@ document.getElementById('openPreviewBtn')?.addEventListener('click', async () =>
   <meta charset="UTF-8">
   <title>プレビュー</title>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
+    body { margin: 0; overflow: hidden; font-family: sans-serif; background: white; }
+    iframe { width: 100%; height: 100%; border: none; display: block; }
     .info {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 8px;
-      font-size: 12px;
-      pointer-events: none;
-      z-index: 10000;
+      position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6);
+      color: white; padding: 4px 8px; border-radius: 8px; font-size: 12px;
+      pointer-events: none; z-index: 10000;
     }
   </style>
 </head>
 <body>
-  <iframe src="/?preview=${token}"></iframe>
-  <div class="info">管理プレビューモード（メンテナンスロック無効）</div>
+  <iframe src="${baseUrl}/?preview=${token}"></iframe>
+  <div class="info">管理プレビューモード</div>
 </body>
 </html>
   `;
-  
-  // Blob URL を作成して新しいタブで開く
+
   const blob = new Blob([previewHtml], { type: 'text/html' });
   const blobUrl = URL.createObjectURL(blob);
   window.open(blobUrl, '_blank');
-  
-  // メモリ解放のため、少し待ってから revoke しても良いが、
-  // 新しいタブが開いた後に revoke するとそのタブが空白になる可能性があるため、
-  // ここでは revoke しない。タブを閉じた後はメモリリークするが許容範囲。
 });
 
   function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
