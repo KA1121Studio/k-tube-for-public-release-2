@@ -187,46 +187,7 @@ body {
   fill: #065fd4; /* YouTubeの青 */
 }
 
-/* 固定左サイドバー（幅小さめ） */
-.sidebar-fixed {
-  position: fixed;
-  top: 64px;
-  left: 0;
-  width: 72px;                   /* ここがバーの幅 */
-  height: calc(100vh - 64px);
-  background: #fff;
-  border-right: 1px solid #ddd;
-  overflow-y: auto;
-  z-index: 30;
-  transition: width 0.3s ease;
-}
 
-/* ホバーで広げる（任意） */
-.sidebar-fixed:hover {
-  width: 240px;
-}
-
-/* 固定左サイドバー（幅小さめ） */
-.sidebar-fixed {
-  position: fixed;
-  top: 64px;
-  left: 0;
-  width: 72px;                   /* バーの幅（ここを変えてもOK） */
-  height: calc(100vh - 64px);
-  background: #fff;
-  border-right: 1px solid #ddd;
-  overflow-y: auto;
-  z-index: 30;
-}
-
-/* メインコンテンツを完全にバーの幅に合わせる（隙間防止） */
-main.content-main {
-  margin-left: 72px !important;  /* バーの幅と完全に一致させる */
-  width: calc(100% - 72px) !important;  /* 右端まで広げる */
-  padding: 16px;                 /* 元のpaddingはそのまま */
-  min-height: calc(100vh - 64px);
-  box-sizing: border-box;
-}
 
 /* モバイル時はフル幅に戻す */
 @media (max-width: 900px) {
@@ -770,55 +731,19 @@ body.dark-mode .sidebar-fixed {
   margin-left: 240px; /* サイドバーの幅分ずらす */
 }
 
-/* 固定サイドバー：常に左固定、幅72px、デフォルト表示 */
+
+/* 固定サイドバー（72px → ホバーで240px） */
 .sidebar-fixed {
   position: fixed;
-  top: 56px;          /* ヘッダー高さに合わせる */
+  top: 64px;                 /* ヘッダー高さにピッタリ合わせる */
   left: 0;
-  bottom: 0;
-  width: 72px;        /* ← お好みの幅に */
-  background: #fff;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
-  z-index: 1000;
-  transform: translateX(0);
-  transition: transform 0.3s ease;
-  overflow-y: auto;
-}
-
-/* 非表示時：左に完全に隠す */
-.sidebar-fixed.hidden {
-  transform: translateX(-100%);
-}
-
-/* メインコンテンツ：サイドバー分のマージンを取る（デフォルト） */
-.content-main {
-  margin-left: 72px;   /* サイドバーの幅と同じ */
-  transition: margin-left 0.3s ease;
-}
-
-/* サイドバー非表示時はマージンをなくす */
-.sidebar-fixed.hidden ~ .content-main {
-  margin-left: 0;
-}
-
-/* ダークモード対応（必要に応じて） */
-body.dark-mode .sidebar-fixed {
-  background: #1e1e1e;
-  color: #eee;
-}
-
-/* 固定サイドバー */
-.sidebar-fixed {
-  position: fixed;
-  top: 56px;
-  left: 0;
-  bottom: 0;
+  bottom: 0;                 /* 下端まで */
   width: 72px;
   background: #fff;
   box-shadow: 2px 0 8px rgba(0,0,0,0.05);
   z-index: 1000;
   transform: translateX(0);
-  transition: transform 0.3s ease, width 0.3s ease;  /* ← スライド＋ホバー拡大に */
+  transition: transform 0.3s ease, width 0.3s ease;  /* スライド＋ホバー拡大 */
   overflow-y: auto;
 }
 
@@ -827,16 +752,24 @@ body.dark-mode .sidebar-fixed {
   transform: translateX(-100%);
 }
 
+/* ホバーでぬるっと240pxに */
+.sidebar-fixed:hover {
+  width: 240px;
+}
+
 /* メインコンテンツ */
 .content-main {
   margin-left: 72px;
-  transition: margin-left 0.3s ease;  /* サイドバー開閉に連動 */
+  transition: margin-left 0.3s ease;
 }
 
-/* サイドバーが隠れたときのメインコンテンツ */
+/* サイドバー非表示のときメインコンテンツのマージン0 */
 .sidebar-fixed.hidden ~ .content-main {
   margin-left: 0;
 }
-.sidebar-fixed:hover {
-  width: 240px;   /* もとの広げたい幅に */
+
+/* ダークモード */
+body.dark-mode .sidebar-fixed {
+  background: #1e1e1e;
+  color: #eee;
 }
