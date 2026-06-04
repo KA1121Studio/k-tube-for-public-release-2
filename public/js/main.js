@@ -1008,21 +1008,21 @@ window.addEventListener('load', () => {
   
 const menuBtn = document.getElementById('menuBtn');
 
-// 固定サイドバーの表示/非表示を切り替える
+// 固定サイドバーの表示/非表示を切り替える（hiddenクラスで制御）
 function toggleFixedSidebar(show = null) {
   const fixedSidebar = document.getElementById('sidebarFixed');
   if (!fixedSidebar) return;
 
   if (show === true) {
-    fixedSidebar.classList.add('visible');
+    fixedSidebar.classList.remove('hidden');   // 表示
   } else if (show === false) {
-    fixedSidebar.classList.remove('visible');
+    fixedSidebar.classList.add('hidden');      // 非表示
   } else {
-    fixedSidebar.classList.toggle('visible');
+    fixedSidebar.classList.toggle('hidden');   // トグル
   }
 }
 
-// ボタンにイベントを割り当て
+// ハンバーガーボタンにイベントを割り当て
 if (menuBtn) {
   menuBtn.addEventListener('click', () => toggleFixedSidebar());
 }
