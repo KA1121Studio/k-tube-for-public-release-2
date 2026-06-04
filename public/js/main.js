@@ -1,4 +1,4 @@
-      const PIPED_API_BASE = '/piped';
+const PIPED_API_BASE = '/piped';
       const MAX_RESULTS = 12;
       const el = id => document.getElementById(id);
       const app = el('app');
@@ -1022,31 +1022,16 @@ window.addEventListener('load', () => {
 
   
 const menuBtn = document.getElementById('menuBtn');
-
-// 固定サイドバーの表示/非表示を切り替える
-function toggleFixedSidebar(show = null) {
-  const fixedSidebar = document.getElementById('sidebarFixed');
-  if (!fixedSidebar) return;
-
-  if (show === true) {
-    fixedSidebar.classList.add('visible');
-  } else if (show === false) {
-    fixedSidebar.classList.remove('visible');
-  } else {
-    // 引数なし → 現在の状態を反転
-    fixedSidebar.classList.toggle('visible');
-  }
-}
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
 
 function toggleMenu() {
   sidebar.classList.toggle('open');
   overlay.classList.toggle('open');
 }
 
-const menuBtn = document.getElementById('menuBtn');
-if (menuBtn) {
-  menuBtn.addEventListener('click', () => toggleFixedSidebar());
-}
+menuBtn.addEventListener('click', toggleMenu);
+overlay.addEventListener('click', toggleMenu);
 
 
 
@@ -1113,7 +1098,9 @@ document.querySelectorAll('.sidebar-item').forEach(item => {
       renderSettings();
     }
 
-    toggleFixedSidebar(false);  // 強制的に閉じる
+    if (sidebar.classList.contains('open')) {
+      toggleMenu();
+    }
   });
 });
 
