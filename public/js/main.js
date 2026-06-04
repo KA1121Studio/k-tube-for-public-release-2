@@ -1,4 +1,4 @@
-const PIPED_API_BASE = '/piped';
+      const PIPED_API_BASE = '/piped';
       const MAX_RESULTS = 12;
       const el = id => document.getElementById(id);
       const app = el('app');
@@ -65,22 +65,7 @@ const PIPED_API_BASE = '/piped';
       });
       renderByHash();
 
-      function renderByHash() {
-        const h = location.hash.slice(1);
-        if (!h) return renderHome();
-        const [k, v] = h.split('=');
-        if (k === 'watch') return renderWatch(v);
-        if (k === 'channel') return renderChannel(v);
-        if (k === 'search') {
-          searchInput.value = decodeURIComponent(v || '');
-          performSearch(decodeURIComponent(v || ''));
-          return;
-        }
-        renderHome();
-      }
-
-
-
+    
 function renderHome() {
   app.innerHTML = `
     <section id="homeSection">
@@ -1022,19 +1007,25 @@ window.addEventListener('load', () => {
 
   
 const menuBtn = document.getElementById('menuBtn');
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('overlay');
 
-function toggleMenu() {
-  sidebar.classList.toggle('open');
-  overlay.classList.toggle('open');
+// 固定サイドバーの表示/非表示を切り替える
+function toggleFixedSidebar(show = null) {
+  const fixedSidebar = document.getElementById('sidebarFixed');
+  if (!fixedSidebar) return;
+
+  if (show === true) {
+    fixedSidebar.classList.add('visible');
+  } else if (show === false) {
+    fixedSidebar.classList.remove('visible');
+  } else {
+    fixedSidebar.classList.toggle('visible');
+  }
 }
 
-menuBtn.addEventListener('click', toggleMenu);
-overlay.addEventListener('click', toggleMenu);
-
-
-
+// ボタンにイベントを割り当て
+if (menuBtn) {
+  menuBtn.addEventListener('click', () => toggleFixedSidebar());
+}
      
 function updateSidebarActive() {
   const hash = location.hash.slice(1);
@@ -1098,9 +1089,7 @@ document.querySelectorAll('.sidebar-item').forEach(item => {
       renderSettings();
     }
 
-    if (sidebar.classList.contains('open')) {
-      toggleMenu();
-    }
+    toggleFixedSidebar(false);  // 強制的に閉じる
   });
 });
 
