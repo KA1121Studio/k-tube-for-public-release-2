@@ -1013,7 +1013,6 @@ function toggleFixedSidebar(show = null) {
   const contentMain = document.querySelector('.content-main');
   if (!fixedSidebar || !contentMain) return;
 
-  // 状態を切り替える
   if (show === true) {
     fixedSidebar.classList.remove('hidden');
   } else if (show === false) {
@@ -1022,11 +1021,10 @@ function toggleFixedSidebar(show = null) {
     fixedSidebar.classList.toggle('hidden');
   }
 
-  // サイドバーの表示状態に応じてメインコンテンツのマージンを変更（確実な方法）
   if (fixedSidebar.classList.contains('hidden')) {
-    contentMain.style.marginLeft = '0';
+    contentMain.style.setProperty('margin-left', '0', 'important');
   } else {
-    contentMain.style.marginLeft = '72px';  // サイドバーの幅と同じ
+    contentMain.style.setProperty('margin-left', '72px', 'important');
   }
 }
 
