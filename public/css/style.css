@@ -806,3 +806,37 @@ body.dark-mode .sidebar-fixed {
   background: #1e1e1e;
   color: #eee;
 }
+
+/* 固定サイドバー */
+.sidebar-fixed {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  bottom: 0;
+  width: 72px;
+  background: #fff;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+  z-index: 1000;
+  transform: translateX(0);
+  transition: transform 0.3s ease, width 0.3s ease;  /* ← スライド＋ホバー拡大に */
+  overflow-y: auto;
+}
+
+/* 非表示時 */
+.sidebar-fixed.hidden {
+  transform: translateX(-100%);
+}
+
+/* メインコンテンツ */
+.content-main {
+  margin-left: 72px;
+  transition: margin-left 0.3s ease;  /* サイドバー開閉に連動 */
+}
+
+/* サイドバーが隠れたときのメインコンテンツ */
+.sidebar-fixed.hidden ~ .content-main {
+  margin-left: 0;
+}
+.sidebar-fixed:hover {
+  width: 240px;   /* もとの広げたい幅に */
+}
