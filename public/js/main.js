@@ -1008,25 +1008,36 @@ window.addEventListener('load', () => {
   
 const menuBtn = document.getElementById('menuBtn');
 
-// 固定サイドバーの表示/非表示を切り替える（hiddenクラスで制御）
 function toggleFixedSidebar(show = null) {
   const fixedSidebar = document.getElementById('sidebarFixed');
-  if (!fixedSidebar) return;
+  const contentMain = document.querySelector('.content-main');
+  if (!fixedSidebar || !contentMain) return;
 
+  // 状態を切り替える
   if (show === true) {
-    fixedSidebar.classList.remove('hidden');   // 表示
+    fixedSidebar.classList.remove('hidden');
   } else if (show === false) {
-    fixedSidebar.classList.add('hidden');      // 非表示
+    fixedSidebar.classList.add('hidden');
   } else {
-    fixedSidebar.classList.toggle('hidden');   // トグル
+    fixedSidebar.classList.toggle('hidden');
+  }
+
+  // サイドバーの表示状態に応じてメインコンテンツのマージンを変更（確実な方法）
+  if (fixedSidebar.classList.contains('hidden')) {
+    contentMain.style.marginLeft = '0';
+  } else {
+    contentMain.style.marginLeft = '72px';  // サイドバーの幅と同じ
   }
 }
 
-// ハンバーガーボタンにイベントを割り当て
 if (menuBtn) {
   menuBtn.addEventListener('click', () => toggleFixedSidebar());
 }
-     
+
+window.addEventListener('DOMContentLoaded', () => {
+  toggleFixedSidebar(true);   // サイドバーを表示＆メインのマージン72px
+});
+
 function updateSidebarActive() {
   const hash = location.hash.slice(1);
   const items = document.querySelectorAll('.sidebar-item, .menu-item');
