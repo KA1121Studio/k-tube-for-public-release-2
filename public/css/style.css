@@ -769,3 +769,40 @@ body.dark-mode .sidebar-fixed {
 .sidebar-fixed.visible ~ .content-main {
   margin-left: 240px; /* サイドバーの幅分ずらす */
 }
+
+/* 固定サイドバー：常に左固定、幅72px、デフォルト表示 */
+.sidebar-fixed {
+  position: fixed;
+  top: 56px;          /* ヘッダー高さに合わせる */
+  left: 0;
+  bottom: 0;
+  width: 72px;        /* ← お好みの幅に */
+  background: #fff;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+  z-index: 1000;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+
+/* 非表示時：左に完全に隠す */
+.sidebar-fixed.hidden {
+  transform: translateX(-100%);
+}
+
+/* メインコンテンツ：サイドバー分のマージンを取る（デフォルト） */
+.content-main {
+  margin-left: 72px;   /* サイドバーの幅と同じ */
+  transition: margin-left 0.3s ease;
+}
+
+/* サイドバー非表示時はマージンをなくす */
+.sidebar-fixed.hidden ~ .content-main {
+  margin-left: 0;
+}
+
+/* ダークモード対応（必要に応じて） */
+body.dark-mode .sidebar-fixed {
+  background: #1e1e1e;
+  color: #eee;
+}
