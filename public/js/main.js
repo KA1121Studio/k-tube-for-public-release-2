@@ -890,6 +890,10 @@ if (relatedList) {
       }
     }, 300);
 
+// 動画ページでは初期状態でサイドバーを隠す（ユーザーはメニューから表示可能）
+toggleFixedSidebar(false);
+
+
   } catch (fatalErr) {
     console.error('renderWatch 全体エラー:', fatalErr);
     app.innerHTML = `
@@ -1021,10 +1025,13 @@ function toggleFixedSidebar(show = null) {
     fixedSidebar.classList.toggle('hidden');
   }
 
+
   if (fixedSidebar.classList.contains('hidden')) {
     contentMain.style.setProperty('margin-left', '0', 'important');
+    document.body.classList.add('sidebar-hidden');       // ← 追加
   } else {
     contentMain.style.setProperty('margin-left', '72px', 'important');
+    document.body.classList.remove('sidebar-hidden');    // ← 追加
   }
 }
 
