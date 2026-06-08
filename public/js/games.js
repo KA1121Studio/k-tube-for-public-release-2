@@ -46,7 +46,10 @@ function renderGamePlay(game) {
       <iframe src="${game.embedUrl}" frameborder="0" allowfullscreen></iframe>
     </div>
   `;
+  toggleFixedSidebar(false);   
 }
+
+
 
 window.loadGames = loadGames;
 window.renderGamePlay = renderGamePlay;
