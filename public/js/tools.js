@@ -46,6 +46,7 @@ function renderToolPlay(tool) {
       <iframe src="${tool.embedUrl}" frameborder="0" allowfullscreen></iframe>
     </div>
   `;
+  toggleFixedSidebar(false);  
 }
 
 window.loadTools = loadTools;
