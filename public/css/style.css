@@ -248,16 +248,10 @@ main.content-main {
   }
 }
 
-/* 再生画面（watchページ）では左サイドバーを非表示にする */
-body.watch-page .sidebar-fixed {
-  display: none;
-}
 
-/* メインコンテンツもフル幅に戻す（左マージンなし） */
-body.watch-page main.content-main {
-  margin-left: 0 !important;
-  width: 100% !important;
-}
+
+
+
 
 /* ゲームカードもホームと同じスタイルを流用 */
 #gameGrid .card .thumb img {
@@ -275,6 +269,9 @@ body.watch-page main.content-main {
   z-index: 20;                   /* headerより下だけどコンテンツの上 */
   background: #000;              /* 黒背景で没入感 */
   overflow: hidden;
+}
+body.sidebar-hidden .play-fullscreen {
+  left: 0;
 }
 
 /* iframeを完全にフィット */
