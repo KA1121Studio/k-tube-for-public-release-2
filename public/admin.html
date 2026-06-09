@@ -139,6 +139,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="notifications">📢 お知らせ管理</button>
       <button class="tab-btn" data-tab="maintenance">🔧 メンテナンス管理</button>
+      <button class="tab-btn" data-tab="admins">👥 管理者管理</button>
     </div>
 
     <!-- お知らせ管理タブ -->
@@ -198,7 +199,23 @@
         <div id="futureMaintenanceList">読み込み中...</div>
       </div>
     </div>
+
+
+<div id="adminsTab" class="tab-content">
+  <div class="card">
+    <h2>➕ 新規管理者追加</h2>
+    <div class="form-group"><label>ユーザー名</label><input type="text" id="newAdminUsername"></div>
+    <div class="form-group"><label>パスワード</label><input type="password" id="newAdminPassword"></div>
+    <button onclick="addAdmin()">追加</button>
+    <div id="addAdminMsg"></div>
   </div>
+
+  <div class="card">
+    <h2>📋 登録済み管理者</h2>
+    <div id="adminsList">読み込み中...</div>
+  </div>
+</div>
+  
 </div>
 
 <script>
@@ -247,6 +264,8 @@
           loadMaintenanceStatus();
           loadFutureMaintenances();
         }
+        　if (tabId === 'admins') loadAdmins();
+  　　　　 if (tabId === 'maintenance') { loadMaintenanceStatus(); loadFutureMaintenances(); }
       };
     });
   }
@@ -475,6 +494,70 @@ document.getElementById('openPreviewBtn')?.addEventListener('click', async () =>
 });
 
   function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+
+  async function loadAdmins() {
+  const container = document.getElementById('adminsList');
+  container.innerHTML = '読み込み中...';
+  try {
+    const res = await fetch('/api/admin/admins', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('取得失敗');
+    const admins = await res.json();
+    if (admins.length === 0) {
+      container.innerHTML = '<p>管理者はまだいません</p>';
+      return;
+    }
+    container.innerHTML = admins.map(a => `
+      <div class="notification-item flex">
+        <div>
+          <strong>${escapeHtml(a.username)}</strong>
+          <span class="badge">${a.is_active ? '有効' : '無効'}</span>
+          <div style="font-size:12px;color:#666;">作成: ${new Date(a.created_at).toLocaleString()}</div>
+        </div>
+        <button class="btn-danger" onclick="deleteAdmin(${a.id})">削除</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    container.innerHTML = `<div class="error">エラー: ${e.message}</div>`;
+  }
+}
+
+async function addAdmin() {
+  const username = document.getElementById('newAdminUsername').value.trim();
+  const password = document.getElementById('newAdminPassword').value;
+  if (!username || !password) { alert('ユーザー名とパスワードを入力してください'); return; }
+  const res = await fetch('/api/admin/admins', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ username, password })
+  });
+  const msgDiv = document.getElementById('addAdminMsg');
+  if (res.ok) {
+    msgDiv.innerHTML = '<span class="success">追加しました</span>';
+    document.getElementById('newAdminUsername').value = '';
+    document.getElementById('newAdminPassword').value = '';
+    loadAdmins();
+  } else {
+    const err = await res.json();
+    msgDiv.innerHTML = `<span class="error">${err.error || '追加失敗'}</span>`;
+  }
+}
+
+async function deleteAdmin(id) {
+  if (!confirm('本当に削除しますか？')) return;
+  const res = await fetch(`/api/admin/admins/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (res.ok) {
+    loadAdmins();
+  } else {
+    const err = await res.json();
+    alert(err.error || '削除失敗');
+  }
+}
+  
 </script>
 </body>
 </html>
