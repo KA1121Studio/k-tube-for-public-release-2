@@ -20,7 +20,53 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import crypto from 'crypto';
 
+/**
+ * パスワードをハッシュ化（salt付き）
+ * @param {string} password 平文
+ * @returns {string} salt:hash の形式
+ */
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return `${salt}:${hash}`;
+}
+
+/**
+ * ハッシュ化されたパスワードを検証
+ * @param {string} password 平文
+ * @param {string} stored   salt:hash の形式
+ * @returns {boolean}
+ */
+function verifyPassword(password, stored) {
+  const [salt, hash] = stored.split(':');
+  const verifyHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return hash === verifyHash;
+}
+
+// サーバー起動時（listen の直前など）
+async function ensureDefaultAdmin() {
+  if (!process.env.ADMIN_ID || !process.env.ADMIN_PW) return;
+
+  const { data: existing } = await supabase
+    .from('admins')
+    .select('id')
+    .eq('username', process.env.ADMIN_ID)
+    .maybeSingle();
+
+  if (existing) return; // 既存あり
+
+  const hashed = hashPassword(process.env.ADMIN_PW);
+  await supabase.from('admins').insert({
+    username: process.env.ADMIN_ID,
+    password: hashed,
+    is_active: true
+  });
+  console.log('Default admin created from environment variables.');
+}
+
+// listen の中で await ensureDefaultAdmin(); を忘れずに
 
 // ====================== グローバル変数 ======================
 let totalAccesses = 0;
@@ -816,20 +862,6 @@ const ADMIN_ID = process.env.ADMIN_ID;
 const ADMIN_PW = process.env.ADMIN_PASSWORD;
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
-app.post('/admin/login', express.json(), (req, res) => {
-  const { id, password } = req.body;
-  if (id === ADMIN_ID && password === ADMIN_PW) {
-    // JWTを発行（有効期限1時間）
-    const token = jwt.sign(
-      { admin: true },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-    res.json({ token });
-  } else {
-    res.status(401).json({ error: 'Unauthorized' });
-  }
-});
 
 // 認証ミドルウェア
 function requireAdmin(req, res, next) {
@@ -903,24 +935,89 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin.html'));
 });
 
-// ======================
-// 管理画面API（/api/admin/ 配下に統一）
-// ======================
+// /admin/login と /api/admin/login を統一的に書き換え
+function createAdminLoginHandler() {
+  return async (req, res) => {
+    const { id, password } = req.body;
+    if (!id || !password) {
+      return res.status(400).json({ error: 'ID and password required' });
+    }
 
-// 管理者ログイン（新しいパス）
-app.post('/api/admin/login', express.json(), (req, res) => {
-  const { id, password } = req.body;
-  if (id === ADMIN_ID && password === ADMIN_PW) {
+    const { data: admin, error } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('username', id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error || !admin) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!verifyPassword(password, admin.password)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const token = jwt.sign(
-      { admin: true },
+      { admin: true, username: admin.username, id: admin.id },
       JWT_SECRET,
       { expiresIn: '1h' }
     );
     res.json({ token });
-  } else {
-    res.status(401).json({ error: 'Unauthorized' });
-  }
+  };
+}
+
+// 既存のルート定義を置き換え
+app.post('/admin/login', express.json(), createAdminLoginHandler());
+app.post('/api/admin/login', express.json(), createAdminLoginHandler());
+
+// 管理者一覧取得
+app.get('/api/admin/admins', requireAdmin, async (req, res) => {
+  const { data, error } = await supabase
+    .from('admins')
+    .select('id, username, is_active, created_at')
+    .order('created_at', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
+
+// 管理者追加
+app.post('/api/admin/admins', requireAdmin, express.json(), async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password required' });
+  }
+
+  const hashed = hashPassword(password);
+  const { data, error } = await supabase
+    .from('admins')
+    .insert({ username, password: hashed, is_active: true })
+    .select('id, username, is_active, created_at')
+    .single();
+  if (error) {
+    // 重複エラーなど
+    return res.status(400).json({ error: error.message });
+  }
+  res.json(data);
+});
+
+// 管理者削除（自分自身は削除不可にしても良い）
+app.delete('/api/admin/admins/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  // 自分自身のIDをJWTから取得（オプション）
+  // const token = req.headers.authorization.split(' ')[1];
+  // const decoded = jwt.verify(token, JWT_SECRET);
+  // if (decoded.id == id) return res.status(400).json({ error: '自分自身は削除できません' });
+
+  const { error } = await supabase
+    .from('admins')
+    .delete()
+    .eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true });
+});
+
 
 
 // お知らせ一覧取得（一般ユーザーと同じだが、管理画面でも使いやすいように）
@@ -1073,6 +1170,8 @@ app.post('/api/admin/maintenance/stop', requireAdmin, async (req, res) => {
   if (updateError) return res.status(500).json({ error: updateError.message });
   res.json({ success: true });
 });
+
+   
 
 // api/index.js の最後
 export default app;
