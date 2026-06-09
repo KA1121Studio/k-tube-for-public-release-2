@@ -1,51 +1,76 @@
-# K-tube (vercel板)
+# K-tube（Vercel版）
 
-K-tubeは、YouTubeが見られない環境でも動画を視聴できるよう設計された非公式クライアントです。
+K-tubeは、YouTubeが利用できない環境でも動画を視聴できるように設計された非公式クライアントです。
 
-デモURL https://k-tube-for-public-release-2.vercel.app/
+**デモURL**
+https://k-tube-for-public-release-2.vercel.app/
+
+---
+
+## Vercel版について
+
+このリポジトリは **Vercel版** です。
+
+Vercelの仕様上、**yt-dlpは利用できません。**
+
+yt-dlpを利用したい場合は、Render版をご利用ください。
+
+### Render版
+
+https://github.com/KA1121Studio/K-tube-For-public-release
 
 ---
 
 ## デプロイ方法
 
-ワンクリックで自分の環境にデプロイすることができます。
+ワンクリックで自分の環境へデプロイできます。
 
 ### Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/KA1121Studio/k-tube-for-public-release-2)
 
-#### render板は、こちら　https://github.com/KA1121Studio/K-tube-For-public-release
+### Render版
 
-
----
-
-### vercel板では、yt-dlpは、使用できません。
- render板（ https://github.com/KA1121Studio/K-tube-For-public-release ）を使用してください。
+https://github.com/KA1121Studio/K-tube-For-public-release
 
 ---
 
-## 動作条件
+## 動作環境
 
-node.js
-
-npn
+* Node.js
+* npm
 
 ---
 
 ## ローカルでの実行方法
 
-### 依存関係
+### 依存関係のインストール
 
-npm install 
+```bash
+npm install
+```
 
-### サーバー起動
+### サーバーの起動
 
+```bash
 npm start
+```
 
 ---
 
-## 質問
+## Vercel版とRender版の違い
 
-### 質問当ございましたら、以下まで連絡をお願いします
+| 項目       | Vercel版 | Render版 |
+| -------- | ------- | ------- |
+| デプロイ速度   | ○       | ○       |
+| yt-dlp対応 | ×       | ○       |
+| 推奨用途     | 通常利用   | 安定性重視  |
+| 更新頻度     | 常に更新   | 永久版  |
+
+---
+
+## お問い合わせ
+
+ご質問や不具合報告などがありましたら、以下までご連絡ください。
 
 https://scratch.mit.edu/users/I-love-Proxy/
