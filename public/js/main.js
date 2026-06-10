@@ -1782,7 +1782,8 @@ function showAutoNotificationPopup(notifications) {
     item.className = 'popup-item';
     item.innerHTML = `
       <div class="popup-title">${escapeHtml(notif.title)}</div>
-      <div class="popup-content">${escapeHtml(notif.content).substring(0, 100)}${notif.content.length > 100 ? '…' : ''}</div>
+      <div class="popup-content">${escapeHtml(notif.content).substring(0, 100).replace(/\n/g, '<br>')}${notif.content.length > 100 ? '…' : ''}</div>
+
       <button class="popup-detail" data-id="${notif.id}">詳細</button>
     `;
     bodyDiv.appendChild(item);
@@ -1942,7 +1943,7 @@ async function checkMaintenance() {
           overlay.innerHTML = `
             <div class="maintenance-card">
               <h2>🔧 メンテナンス中</h2>
-              <p>${escapeHtml(data.content)}</p>
+              <p>${escapeHtml(data.content).replace(/\n/g, '<br>')}</p>
               <p>${new Date(data.start).toLocaleString()} 〜 ${new Date(data.end).toLocaleString()}</p>
               <p>ご不便をおかけしますが、しばらくお待ちください。</p>
             </div>
@@ -1964,7 +1965,7 @@ async function checkMaintenance() {
             </div>
             <div class="maintenance-card-body">
               <strong>${escapeHtml(data.title)}</strong>
-              <p>${escapeHtml(data.content)}</p>
+              <p>${escapeHtml(data.content).replace(/\n/g, '<br>')}</p>
               <p class="maintenance-time">期間: ${new Date(data.start).toLocaleString()} 〜 ${new Date(data.end).toLocaleString()}</p>
             </div>
           `;
@@ -2042,7 +2043,8 @@ async function renderNotificationList() {
     item.className = 'popup-item';
     item.innerHTML = `
       <div class="popup-title">${escapeHtml(notif.title)}</div>
-      <div class="popup-content">${escapeHtml(notif.content).substring(0, 80)}${notif.content.length > 80 ? '…' : ''}</div>
+      <div class="popup-content">${escapeHtml(notif.content).substring(0, 80).replace(/\n/g, '<br>')}${notif.content.length > 80 ? '…' : ''}</div>
+      
       <div class="popup-meta" style="font-size:11px; color:#888;">${new Date(notif.created_at).toLocaleString()}</div>
       <button class="popup-detail" data-id="${notif.id}">詳細</button>
     `;
