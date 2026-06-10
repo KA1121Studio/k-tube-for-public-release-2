@@ -1170,6 +1170,7 @@ app.post('/api/admin/maintenance/stop', requireAdmin, async (req, res) => {
   res.json({ success: true });
 });
 
+await ensureDefaultAdmin();
    
 
 // api/index.js の最後
