@@ -47,7 +47,7 @@ function verifyPassword(password, stored) {
 
 // サーバー起動時（listen の直前など）
 async function ensureDefaultAdmin() {
-  if (!process.env.ADMIN_ID || !process.env.ADMIN_PW) return;
+  if (!process.env.ADMIN_ID || !process.env.ADMIN_PASSWORD) return;  // ここを修正
 
   const { data: existing } = await supabase
     .from('admins')
@@ -55,9 +55,9 @@ async function ensureDefaultAdmin() {
     .eq('username', process.env.ADMIN_ID)
     .maybeSingle();
 
-  if (existing) return; // 既存あり
+  if (existing) return;
 
-  const hashed = hashPassword(process.env.ADMIN_PW);
+  const hashed = hashPassword(process.env.ADMIN_PASSWORD);  // ここも修正
   await supabase.from('admins').insert({
     username: process.env.ADMIN_ID,
     password: hashed,
@@ -65,8 +65,6 @@ async function ensureDefaultAdmin() {
   });
   console.log('Default admin created from environment variables.');
 }
-
-// listen の中で await ensureDefaultAdmin(); を忘れずに
 
 // ====================== グローバル変数 ======================
 let totalAccesses = 0;
