@@ -757,7 +757,6 @@ window.WebSocket = function(url, protocols){
 })
 
 
-import crypto from 'crypto';   // すでにあれば不要
 
 // デバイスIDを生成・検証するヘルパー（フロントで固定IDを使う場合は不要だが、安全のため）
 function getDeviceIdFromHeader(req) {
