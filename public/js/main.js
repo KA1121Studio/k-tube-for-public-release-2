@@ -504,11 +504,16 @@ for (const backend of backends) {
 
     let rawDesc = metaData.description || metaData.shortDescription || '説明文は現在取得できませんでした';
     rawDesc = rawDesc.trim();
+    // 先頭・末尾の空白だけを取り除く（内部の改行は残す）
     rawDesc = rawDesc.replace(/^\s+|\s+$/g, '');
-    rawDesc = rawDesc.replace(/^(?:\r\n|\r|\n|　)+/, '');
-    rawDesc = rawDesc.replace(/\s{2,}/g, ' ');
-    rawDesc = rawDesc.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color:#065fd4; text-decoration:underline;">$1</a>');
-    const escapedDesc = rawDesc;
+    // 先頭の改行だけ除去（任意）
+    rawDesc = rawDesc.replace(/^(?:\r\n|\r|\n)+/, '');
+    // ① まずHTMLエスケープ
+    let escapedDesc = escapeHtml(rawDesc);
+    // ② 改行を<br>に変換
+    escapedDesc = escapedDesc.replace(/\n/g, '<br>');
+    // ③ URLをリンク化
+    escapedDesc = escapedDesc.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color:#065fd4; text-decoration:underline;">$1</a>');
 
     const chName = metaData.uploader || metaData.author || metaData.channelName || metaData.uploaderName || '不明';
     let chId = metaData.channelId || metaData.authorId || (metaData.uploaderUrl?.split('/').pop() || '');
