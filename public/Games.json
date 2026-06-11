@@ -142,6 +142,13 @@
   "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Fgmyo0eoy41wbibg657zurkl3zio5nt8f%2F512x384.jpg",
   "embedUrl": "/Games/zonbi-car/index.html",
   "description": "ドリフトしてゾンビを倒せ！"
+},
+    {
+  "id": "gemikaza-n",
+  "title": "激カザーン",
+  "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4T_HlKuGWF0K-iiLL5Xw18UP3y_KWInkmBTZaVBX-sQ&s=10",
+  "embedUrl": "/Games/gemikaza-n/index.html",
+  "description": "激カザーンで遊ぼう！"
 }
     
   ]
