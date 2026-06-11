@@ -135,6 +135,13 @@
   "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Fh26rup059n8tunamx3uc8cg4i17uaocc%2F512x384.jpg",
   "embedUrl": "/Games/drow-save/index.html",
   "description": "線を書いて守れ！"
+},
+    {
+  "id": "zonbi-car",
+  "title": "Mad Max Zombie Arena",
+  "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Fgmyo0eoy41wbibg657zurkl3zio5nt8f%2F512x384.jpg",
+  "embedUrl": "public/Games/zonbi-car",
+  "description": "ドリフトしてゾンビを倒せ！"
 }
     
   ]
