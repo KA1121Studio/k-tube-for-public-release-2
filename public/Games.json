@@ -140,7 +140,7 @@
   "id": "zonbi-car",
   "title": "Mad Max Zombie Arena",
   "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Fgmyo0eoy41wbibg657zurkl3zio5nt8f%2F512x384.jpg",
-  "embedUrl": "public/Games/zonbi-car",
+  "embedUrl": "/Games/zonbi-car/index.html",
   "description": "ドリフトしてゾンビを倒せ！"
 }
     
