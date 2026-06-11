@@ -93,7 +93,49 @@
       "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQD2ZSCJRZzPlMpUZh63rYA7qOdcaz-NlayzpG0Nmiux5u4LlE&s",
       "embedUrl": "/Games/patisuro/index.html",
       "description": "スロットで遊ぼう！"
-    }
+    },
+   {
+  "id": "hebi",
+  "title": "Worm Puzzle Snake Apple",
+  "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Fkgc33h43coc5eau51ex5ishqfy6eg2al%2F512x384.jpg",
+  "embedUrl": "/Games/hebi/index.html",
+  "description": "ヘビのゲーム"
+},
+{
+  "id": "car",
+  "title": "Rally Race Pro 3.0 Car Racing",
+  "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Fya4wsn7zuy2cct6n3l8pn122yq8mihy8%2F512x384.jpg",
+  "embedUrl": "/Games/car/index.html",
+  "description": "レースゲーム"
+},
+{
+  "id": "zonbi",
+  "title": "Stickboy Defender",
+  "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2F98kf25pe7a3f3pdy83twiifutjmqdkxw%2F512x384.jpg",
+  "embedUrl": "/Games/zonbi/index.html",
+  "description": "ゾンビを倒せ！"
+},
+{
+  "id": "soccer",
+  "title": "League of Football",
+  "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Faddozt0jok1iovrmxaye4f9k6qgg0lna%2F512x384.jpg",
+  "embedUrl": "/Games/soccer/index.html",
+  "description": "シュートを決めろ！"
+},
+{
+  "id": "ad-game",
+  "title": "Mob Control Shoot",
+  "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Fmak258eeak9s5x0um9vjkb0zqgx4m3pv%2F512x384.jpg",
+  "embedUrl": "/Games/ad-game/index.html",
+  "description": "よく見る広告のゲーム"
+},
+{
+  "id": "drow-save",
+  "title": "Draw to Save my Hero",
+  "thumbnail": "https://k-tube-for-public-release-2.vercel.app/Tools/Science/proxy/https%3A%2F%2Fimg.gamemonetize.com%2Fh26rup059n8tunamx3uc8cg4i17uaocc%2F512x384.jpg",
+  "embedUrl": "/Games/drow-save/index.html",
+  "description": "線を書いて守れ！"
+}
     
   ]
 }
