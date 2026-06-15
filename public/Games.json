@@ -149,6 +149,13 @@
   "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4T_HlKuGWF0K-iiLL5Xw18UP3y_KWInkmBTZaVBX-sQ&s=10",
   "embedUrl": "/Games/gemikaza-n/index.html",
   "description": "激カザーンで遊ぼう！"
+    },
+        {
+  "id": "Slope-3",
+  "title": "Slope 3",
+  "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6MuIcF1_decMTE0b1p_ZspSvdmlMog03OsW-Q8Ew2zQ&s=10",
+  "embedUrl": "/Games/Slope-3/index.html",
+  "description": "ボールを転がそう！"
 }
     
   ]
