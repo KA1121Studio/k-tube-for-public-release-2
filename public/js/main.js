@@ -531,18 +531,21 @@ function getWatchSkeletonHTML(videoId) {
       </div>
 
       <!-- 関連動画（スケルトン） -->
-      <aside class="side-col">
-        <div class="skeleton skeleton-text" style="width:50%"></div>
-        ${Array(4).fill(0).map(() => `
-          <div style="display:flex; gap:8px; margin-bottom:12px;">
-            <div class="skeleton" style="width:168px; height:94px; flex-shrink:0;"></div>
-            <div style="flex:1;">
-              <div class="skeleton skeleton-text"></div>
-              <div class="skeleton skeleton-text" style="width:60%"></div>
-            </div>
-          </div>
-        `).join('')}
-      </aside>
+
+<aside class="side-col">
+  <div style="font-weight:700; margin-bottom:12px;">次に再生</div>
+  <div id="relatedList">
+    ${Array(4).fill(0).map(() => `
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <div class="skeleton" style="width:168px; height:94px; flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text" style="width:60%"></div>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+</aside>
     </div>
   `;
 }
