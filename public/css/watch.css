@@ -1,44 +1,252 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+
 body {
-  margin: 0;
-  background: #000;
-  color: #fff;
-  font-family: system-ui, -apple-system, sans-serif;
-  height: 100vh;
-  overflow: hidden;
+  background: #0f0f0f;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: "Roboto", Arial, sans-serif;
 }
 
 #player-container {
-  width: 100%;
-  height: 100%;
   position: relative;
+  width: 90vw;
+  max-width: 900px;
+  aspect-ratio: 16 / 9;
+  background: black;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-video, audio {
+#video {
   width: 100%;
   height: 100%;
-  display: block;
+  object-fit: contain;
 }
 
-#error-message {
+/* 読み込み/エラー表示 */
+.yt-loading, .yt-error {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   background: rgba(0,0,0,0.7);
-  padding: 20px 40px;
-  border-radius: 12px;
-  text-align: center;
-  max-width: 80%;
-  display: none;
-  font-size: 15px;
-  line-height: 1.5;
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 1.2rem;
+  z-index: 30;
+}
+.yt-error {
+  color: #ff6b6b;
 }
 
-#loading {
+/* バッファリングスピナー */
+.yt-spinner {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.2em;
-  color: #aaa;
+  z-index: 20;
 }
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 5px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 大きな再生ボタン */
+.yt-big-play {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.6);
+  border: none;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+.yt-big-play .material-icons { color: white; font-size: 42px; }
+
+/* クリーンモード（動画だけ表示） */
+.clean-mode .yt-control-bar,
+.clean-mode .yt-big-play,
+.clean-mode .double-tap-indicator,
+.clean-mode .yt-spinner,
+.clean-mode .yt-loading,
+.clean-mode .yt-error {
+  display: none !important;
+}
+
+/* ダブルタップインジケーター */
+.double-tap-indicator {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.75);
+  border-radius: 50%;
+  width: 100px; height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 25;
+}
+.double-tap-indicator.show { opacity: 1; }
+.double-tap-indicator .material-icons { font-size: 40px; margin-bottom: 2px; }
+.double-tap-indicator .tap-text { font-size: 1.2rem; font-weight: bold; line-height: 1.2; }
+
+/* コントロールバー */
+.yt-control-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8) 20%);
+  padding: 24px 16px 12px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 15;
+}
+#player-container.show-controls .yt-control-bar { opacity: 1; }
+
+/* シークバー */
+.yt-progress-container {
+  width: 100%;
+  height: 20px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.yt-progress-bg {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  top: 7px;
+}
+.yt-progress-loaded {
+  position: absolute;
+  left:0; top:0;
+  height: 100%;
+  background: rgba(255,255,255,0.3);
+  width: 0%;
+  border-radius: 3px;
+}
+.yt-progress-played {
+  position: absolute;
+  left:0; top:0;
+  height: 100%;
+  background: #f00;
+  width: 0%;
+  border-radius: 3px;
+  z-index: 2;
+}
+.yt-progress-thumb {
+  position: absolute;
+  left: 0; top: -8px;
+  width: 18px; height: 18px;
+  background: #f00;
+  border-radius: 50%;
+  transform: translate(-50%, 0);
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.yt-progress-container:hover .yt-progress-thumb { opacity: 1; }
+
+/* 操作ボタン行 */
+.yt-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.yt-left-controls, .yt-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.yt-ctrl-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+.yt-ctrl-btn:hover { background: rgba(255,255,255,0.1); }
+.yt-ctrl-btn .material-icons { font-size: 28px; }
+
+/* 時間表示 */
+.yt-time {
+  color: #ddd;
+  font-size: 0.9rem;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* ボリュームスライダー */
+.yt-volume-slider-container {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.2s;
+}
+#player-container:hover .yt-volume-slider-container,
+#volume-btn:hover + .yt-volume-slider-container { width: 70px; }
+.yt-volume-slider {
+  width: 70px;
+  height: 5px;
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.3);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+.yt-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+/* 設定メニュー */
+.settings-menu {
+  position: absolute;
+  right: 16px;
+  bottom: 60px;
+  background: rgba(28,28,28,0.95);
+  border-radius: 8px;
+  padding: 8px 0;
+  min-width: 140px;
+  z-index: 30;
+  font-size: 0.9rem;
+  color: #fff;
+}
+.settings-item {
+  padding: 10px 20px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.settings-item:hover { background: rgba(255,255,255,0.15); }
+.settings-item.selected { font-weight: bold; }
+.settings-item.selected::before { content: "✓ "; font-weight: bold; }
+
+/* 読み込み中は大きな再生ボタンとコントロールバーを隠す */
+.yt-loading:not([style*="display: none"]) ~ .yt-big-play,
+.yt-loading:not([style*="display: none"]) ~ .yt-control-bar { display: none; }
