@@ -861,9 +861,30 @@ async function loadRelatedVideosToSkeleton(videoId, metaData) {
 }
 
 function setupCommentsInSkeleton(videoId) {
-  // コメントエリアのスケルトンを置き換えて実際のコメントセクションを生成
-  const commentsSkeleton = document.getElementById('commentsAreaSkeleton');
-  if (!commentsSkeleton) return;
+  let commentsSkeleton = document.getElementById('commentsAreaSkeleton');
+
+  // ★ もしスケルトンが存在しない場合（予期せぬ消滅）は、自力で生成する
+  if (!commentsSkeleton) {
+    console.warn('commentsAreaSkeleton が見つかりません。強制的に生成します。');
+    const mainCol = document.querySelector('.main-col');
+    if (!mainCol) {
+      console.error('main-col が見つかりません');
+      return;
+    }
+    // コメントブロックを main-col の末尾に追加
+    const newBlock = document.createElement('div');
+    newBlock.id = 'commentsAreaSkeleton';
+    newBlock.style.marginTop = '24px';
+    newBlock.innerHTML = `
+      <div class="skeleton skeleton-text" style="width:50%"></div>
+      <div class="skeleton skeleton-text"></div>
+      <div class="skeleton skeleton-text"></div>
+    `;
+    mainCol.appendChild(newBlock);
+    commentsSkeleton = newBlock; // 再取得
+  }
+
+  // ここから通常の処理：スケルトンを実際のコメントエリアに置き換え
   commentsSkeleton.outerHTML = `
     <div class="comments" id="commentsArea">
       <h3 style="margin:24px 0 12px;">コメント</h3>
@@ -873,12 +894,12 @@ function setupCommentsInSkeleton(videoId) {
       <div id="commentsSentinel" style="height:32px"></div>
     </div>
   `;
-  // 既存の setupComments を呼び出し（ただし、commentsListが存在する前提）
-  setupComments(videoId);
+
+  // DOM 更新を確実にするため、次のイベントループで setupComments を呼ぶ
+  setTimeout(() => {
+    setupComments(videoId);
+  }, 0);
 }
-
-
-
 
      
  function normalizeMetadata(data, source) {
