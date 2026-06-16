@@ -15,13 +15,11 @@
 
   <!-- 読み込み中 -->
   <div id="loading" class="yt-loading">読み込み中...</div>
-
   <!-- バッファリングスピナー -->
   <div id="buffer-spinner" class="yt-spinner" style="display:none">
     <div class="spinner"></div>
   </div>
-
-  <!-- エラーメッセージ -->
+  <!-- エラー表示 -->
   <div id="error-message" class="yt-error" style="display:none"></div>
 
   <!-- 中央の大きな再生ボタン -->
@@ -29,10 +27,16 @@
     <span class="material-icons">play_arrow</span>
   </button>
 
-  <!-- ダブルタップインジケーター -->
+  <!-- ダブルタップインジケーター（中央） -->
   <div id="double-tap-indicator" class="double-tap-indicator">
     <span class="material-icons">fast_forward</span>
     <span class="tap-text">10秒</span>
+  </div>
+
+  <!-- 2倍速インジケーター（上部） -->
+  <div id="speed-indicator" class="speed-indicator" style="display:none">
+    <span class="material-icons">double_arrow</span>
+    <span class="speed-text">2倍速</span>
   </div>
 
   <!-- 下部コントロールバー -->
@@ -59,7 +63,7 @@
         <span class="yt-time" id="time-display">0:00 / 0:00</span>
       </div>
       <div class="yt-right-controls">
-        <button id="download-btn" class="yt-ctrl-btn" title="動画をダウンロード">
+        <button id="download-btn" class="yt-ctrl-btn" title="動画をダウンロード（新しいタブで開く）">
           <span class="material-icons">download</span>
         </button>
         <button id="pip-btn" class="yt-ctrl-btn" title="ピクチャ・イン・ピクチャ">
@@ -74,7 +78,7 @@
       </div>
     </div>
 
-    <!-- 設定メニュー（再生速度） -->
+    <!-- 設定メニュー -->
     <div id="settings-menu" class="settings-menu" style="display:none">
       <div class="settings-item" data-speed="0.25">0.25x</div>
       <div class="settings-item" data-speed="0.5">0.5x</div>
