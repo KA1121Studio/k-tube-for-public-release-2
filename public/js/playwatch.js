@@ -1,9 +1,7 @@
-// パラメータ取得
 const params = new URLSearchParams(window.location.search);
 const mode = params.get("mode") || "default";
 const videoId = params.get("id");
 
-// 要素取得
 const video = document.getElementById("video");
 const audio = document.getElementById("audio");
 const loadingEl = document.getElementById("loading");
@@ -27,8 +25,8 @@ const settingsBtn = document.getElementById("settings-btn");
 const settingsMenu = document.getElementById("settings-menu");
 const playerContainer = document.getElementById("player-container");
 const doubleTapIndicator = document.getElementById("double-tap-indicator");
+const speedIndicator = document.getElementById("speed-indicator");
 
-// 初期チェック
 if (!videoId) {
   showError("動画IDが指定されていません");
 } else {
@@ -124,14 +122,14 @@ async function loadVideo() {
     }
 
     loadingEl.style.display = "none";
-    setupControls(); // カスタムUIの初期化
+    setupControls();
   } catch (err) {
     console.error("動画読み込みエラー:", err);
     showError(`動画の読み込みに失敗しました<br>${err.message}<br><br>別の再生方法を試してください。`);
   }
 }
 
-// ==================== 音声同期（変更なし） ====================
+// ==================== 音声同期 ====================
 function syncVideoAudio() {
   video.addEventListener("play", () => audio.play().catch(() => {}));
   video.addEventListener("pause", () => audio.pause());
@@ -143,7 +141,6 @@ function syncVideoAudio() {
   });
 }
 
-// ==================== エラー表示 ====================
 function showError(message) {
   loadingEl.style.display = "none";
   bufferSpinner.style.display = "none";
@@ -151,9 +148,9 @@ function showError(message) {
   errorEl.style.display = "block";
 }
 
-// ==================== クリーンモード・コントロール表示管理 ====================
+// ==================== クリーンモード管理 ====================
 let cleanModeTimer = null;
-const CLEAN_DELAY = 3000; // 3秒
+const CLEAN_DELAY = 3000;
 
 function enterCleanMode() {
   if (playerContainer.classList.contains('clean-mode')) return;
@@ -163,7 +160,6 @@ function enterCleanMode() {
 }
 
 function exitCleanMode() {
-  if (!playerContainer.classList.contains('clean-mode')) return;
   playerContainer.classList.remove('clean-mode');
 }
 
@@ -172,15 +168,13 @@ function resetActivity() {
   playerContainer.classList.add('show-controls');
   clearTimeout(cleanModeTimer);
   if (!video.paused) {
-    cleanModeTimer = setTimeout(() => {
-      enterCleanMode();
-    }, CLEAN_DELAY);
+    cleanModeTimer = setTimeout(enterCleanMode, CLEAN_DELAY);
   }
 }
 
 // ==================== カスタムコントロール全機能 ====================
 function setupControls() {
-  // アクティビティ検知イベント
+  // アクティビティ検知
   const events = ['mousemove', 'mousedown', 'touchstart', 'keydown', 'wheel'];
   events.forEach(evt => {
     document.addEventListener(evt, (e) => {
@@ -208,6 +202,7 @@ function setupControls() {
       bigPlayBtn.style.display = 'none';
     }
   }
+
   playPauseBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     video.paused ? video.play() : video.pause();
@@ -221,7 +216,7 @@ function setupControls() {
   video.addEventListener('ended', updatePlayPauseIcon);
   updatePlayPauseIcon();
 
-  // 時間表示とシークバー
+  // 時間表示・シークバー
   function formatTime(sec) {
     if (isNaN(sec)) return "0:00";
     const h = Math.floor(sec / 3600);
@@ -229,6 +224,7 @@ function setupControls() {
     const s = Math.floor(sec % 60);
     return h > 0 ? `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}` : `${m}:${s.toString().padStart(2,'0')}`;
   }
+
   video.addEventListener('timeupdate', () => {
     const current = video.currentTime;
     const duration = video.duration || 0;
@@ -245,7 +241,6 @@ function setupControls() {
     }
   });
 
-  // バッファリング表示
   video.addEventListener('waiting', () => {
     if (!video.paused) bufferSpinner.style.display = 'block';
   });
@@ -324,18 +319,14 @@ function setupControls() {
   document.addEventListener('fullscreenchange', updateFullscreenIcon);
   updateFullscreenIcon();
 
-  // ダウンロード
+  // ダウンロード（新しいタブで開く）
   downloadBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const a = document.createElement('a');
-    a.href = video.src || video.currentSrc;
-    a.download = 'video.mp4';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const url = video.src || video.currentSrc;
+    if (url) window.open(url, '_blank');
   });
 
-  // ピクチャ・イン・ピクチャ
+  // PiP
   if ('pictureInPictureEnabled' in document && document.pictureInPictureEnabled) {
     pipBtn.style.display = 'flex';
     pipBtn.addEventListener('click', async (e) => {
@@ -359,6 +350,7 @@ function setupControls() {
   document.addEventListener('click', (e) => {
     if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) settingsMenu.style.display = 'none';
   });
+  let originalRate = 1.0;
   settingsMenu.querySelectorAll('.settings-item').forEach(item => {
     item.addEventListener('click', () => {
       const speed = parseFloat(item.dataset.speed);
@@ -370,7 +362,6 @@ function setupControls() {
     });
   });
   video.playbackRate = 1.0;
-  let originalRate = 1.0;
 
   // キーボードショートカット
   document.addEventListener('keydown', (e) => {
@@ -393,28 +384,29 @@ function setupControls() {
     }
   });
 
-  // ダブルクリックで±10秒
-  video.addEventListener('dblclick', (e) => {
-    const rect = video.getBoundingClientRect();
-    if (e.clientX - rect.left < rect.width / 2) {
-      video.currentTime -= 10;
-      showDoubleTapIndicator('fast_rewind', '10秒戻る');
-    } else {
-      video.currentTime += 10;
-      showDoubleTapIndicator('fast_forward', '10秒進む');
-    }
-  });
-
-  // 動画クリック：中央で再生/停止、端でクリーンモードトグル
+  // ダブルクリック対策（クリック遅延キャンセル）
+  let clickTimer = null;
   video.addEventListener('click', (e) => {
     const rect = video.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const marginX = rect.width * 0.2;
     const marginY = rect.height * 0.2;
+
+    // 中央領域クリックのみ再生/停止を予約（ダブルクリックならキャンセル）
     if (x > marginX && x < rect.width - marginX && y > marginY && y < rect.height - marginY) {
-      video.paused ? video.play() : video.pause();
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        // ダブルクリックが発生したので再生/停止は行わない（ダブルクリックイベント側に任せる）
+        return;
+      }
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        video.paused ? video.play() : video.pause();
+      }, 300);
     } else {
+      // 端クリック：クリーンモード手動切替
       if (playerContainer.classList.contains('clean-mode')) {
         exitCleanMode();
         resetActivity();
@@ -424,9 +416,28 @@ function setupControls() {
     }
   });
 
-  // 長押し2倍速
+  // ダブルクリックで±10秒
+  video.addEventListener('dblclick', (e) => {
+    // 保留中のシングルクリックをキャンセル
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+    }
+    const rect = video.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    if (x < rect.width / 2) {
+      video.currentTime -= 10;
+      showDoubleTapIndicator('fast_rewind', '10秒戻る');
+    } else {
+      video.currentTime += 10;
+      showDoubleTapIndicator('fast_forward', '10秒進む');
+    }
+  });
+
+  // 長押し2倍速再生
   let longPressTimer = null;
   let longPressTriggered = false;
+
   function startLongPress(e) {
     e.preventDefault();
     longPressTriggered = false;
@@ -434,6 +445,7 @@ function setupControls() {
       longPressTriggered = true;
       originalRate = video.playbackRate;
       video.playbackRate = 2.0;
+      speedIndicator.classList.add('show');
     }, 500);
   }
   function endLongPress() {
@@ -441,6 +453,7 @@ function setupControls() {
     if (longPressTriggered) {
       video.playbackRate = originalRate;
       longPressTriggered = false;
+      speedIndicator.classList.remove('show');
     }
   }
   video.addEventListener('mousedown', startLongPress);
@@ -457,7 +470,7 @@ function setupControls() {
     video.volume = Math.min(1, Math.max(0, video.volume + delta));
   }, { passive: false });
 
-  // 初期状態のアクティビティ設定
+  // 初期状態
   resetActivity();
 }
 
