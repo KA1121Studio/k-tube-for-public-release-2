@@ -12,8 +12,33 @@
 <!-- Preconnect -->
 <link rel="preconnect" href="https://teaching-materials-r4zf.onrender.com">
 <link rel="dns-prefetch" href="https://teaching-materials-r4zf.onrender.com">
+  <style>
+#startup-container{
+  opacity:1;
+  transition:opacity 1s ease;
+}
+
+#startup-container.hide{
+  opacity:0;
+}
+</style>
 </head>
 <body>
+  <div id="startup-container">
+  <iframe
+    src="startup.html"
+    style="
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      border:none;
+      z-index:999999;
+      background:white;
+    ">
+  </iframe>
+</div>
 
 <script>
 (function() {
@@ -161,6 +186,7 @@
   </div>
 
 
+
 <!-- メインコンテンツ -->
 <main class="content-main">
   <div class="content" id="app"></div>
@@ -169,6 +195,19 @@
 <!-- JavaScript -->
 <script src="js/main.js"></script>
 
+  <script>
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const startup = document.getElementById('startup-container');
+
+    startup.classList.add('hide');
+
+    setTimeout(() => {
+      startup.remove();
+    }, 1000);
+  }, 10000); // 10秒表示
+});
+</script>
 
 </body>
 </html>
