@@ -195,18 +195,25 @@
 <!-- JavaScript -->
 <script src="js/main.js"></script>
 
-  <script>
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const startup = document.getElementById('startup-container');
-
-    startup.classList.add('hide');
-
+<script>
+if (
+  window.location.pathname === "/" ||
+  window.location.pathname === "/index.html"
+) {
+  window.addEventListener('load', () => {
     setTimeout(() => {
-      startup.remove();
-    }, 1000);
-  }, 10000); // 10秒表示
-});
+      const startup = document.getElementById('startup-container');
+
+      startup.classList.add('hide');
+
+      setTimeout(() => {
+        startup.remove();
+      }, 1000);
+    }, 10000);
+  });
+} else {
+  document.getElementById('startup-container')?.remove();
+}
 </script>
 
 </body>
