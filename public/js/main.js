@@ -419,62 +419,485 @@ async function fetchFastestNetlify(videoId) {
     return null;
   }
 }     
-
-// 指定ミリ秒でタイムアウトするPromiseラッパー
-async function fetchWithTimeout(promise, timeoutMs) {
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs);
-  });
-  try {
-    const result = await Promise.race([promise, timeoutPromise]);
-    clearTimeout(timeoutId);
-    return result;
-  } catch (e) {
-    clearTimeout(timeoutId);
-    throw e;
-  }
-}
      
-
 async function renderWatch(videoId) {
   try {
     observerMap.forEach(o => o.disconnect());
     observerMap.clear();
+    app.innerHTML = `<div style="padding:40px; text-align:center; color:#606060;">読み込み中...</div>`;
 
-    // ★ 即座にスケルトンUIを表示
-    app.innerHTML = getWatchSkeletonHTML(videoId);
+    let metaData = {};
+    let source = "none";
 
-    // デフォルトプレイヤー設定を適用
-    const defaultPlayer = localStorage.getItem('defaultPlayer') || 'official';
-    const iframe = document.getElementById('videoIframe');
-    if (iframe) {
-      iframe.src = getPlayerSrc(videoId, defaultPlayer);
-    }
+   // ── メタデータ取得
+    const backends = [
+      { name: "K-tube API (race)", custom: () => fetchFastestNetlify(videoId) },
 
-    // ★ メタデータをタイムアウト付きで取得（5秒以内）
-    const { metaData, source } = await fetchMetadataWithTimeout(videoId, 5000);
 
-    // ★ 取得できたメタデータで各スケルトンを実データに置き換え
-    if (metaData && metaData.title) {
-      fillMetadataInSkeleton(metaData, source, videoId);
-      addToHistory(videoId, metaData.title, metaData.thumbnail || '',
-        metaData.uploader || metaData.uploaderName || '',
-        metaData.uploaderUrl || (metaData.channelId ? `/channel/${metaData.channelId}` : ''));
+    ];
+
+for (const backend of backends) {
+  try {
+    console.log(`Trying metadata backend: ${backend.name}`);
+
+    let data;
+
+    if (backend.custom) {
+      data = await backend.custom();
     } else {
-      // メタデータが取れなかった場合のフォールバック表示
-      document.getElementById('videoMetaSkeleton').innerHTML = `
-        <h1>動画（ID: ${escapeHtml(videoId)}）</h1>
-        <p style="color:#606060">詳細情報を取得できませんでした</p>
-      `;
+      const res = await fetch(backend.url(), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) continue;
+      data = await res.json();
     }
 
-    // 非同期で関連動画とコメントを読み込む（スケルトン→実データ）
-    loadRelatedVideosToSkeleton(videoId, metaData);
-    setupCommentsInSkeleton(videoId);
+    if (!data || data.error || data.status === "fail") continue;
 
-    // 動画ページではサイドバーを隠す
-    toggleFixedSidebar(false);
+    metaData = normalizeMetadata(data, backend.name);
+    source = backend.name;
+    console.log(`Metadata obtained from: ${source} (成功)`);
+    break;
+
+  } catch (err) {
+    console.warn(`${backend.name} failed:`, err.message);
+  }
+}
+
+
+    if (!metaData.title) {
+      try {
+        const searchData = await pipedFetch('/search', { q: videoId, filter: 'videos' });
+        const item = (searchData?.items || searchData || []).find(it =>
+          it.url?.includes(videoId) || it.url?.includes(`v=${videoId}`)
+        );
+        if (item) {
+          metaData = {
+            title: item.title || `動画（ID: ${videoId}）`,
+            description: item.shortDescription || '説明文なし',
+            thumbnail: item.thumbnail || '',
+            uploader: item.uploaderName || '不明',
+            viewCount: item.views || 0,
+            uploaded: item.uploaded || '',
+            channelName: item.uploaderName || '',
+            channelId: item.uploaderUrl?.split('/').pop() || '',
+          };
+          source = "Piped Search (minimal)";
+        }
+      } catch (e) {
+        console.warn("最終フォールバック失敗", e);
+      }
+    }
+
+
+    const title = metaData.title || `動画（ID: ${videoId}）`;
+    const views = fmtNum(metaData.viewCount ?? metaData.views ?? 0);
+    const likes = fmtNum(metaData.likeCount ?? 0);
+    let uploaded = '---';
+    if (metaData.published || metaData.uploadDate || metaData.uploaded) {
+      try {
+        uploaded = timeAgo(new Date(metaData.published || metaData.uploadDate || metaData.uploaded).toISOString());
+      } catch {}
+    }
+
+
+    let rawDesc = metaData.description || metaData.shortDescription || '説明文は現在取得できませんでした';
+    rawDesc = rawDesc.trim();
+    // 先頭・末尾の空白だけを取り除く（内部の改行は残す）
+    rawDesc = rawDesc.replace(/^\s+|\s+$/g, '');
+    // 先頭の改行だけ除去（任意）
+    rawDesc = rawDesc.replace(/^(?:\r\n|\r|\n)+/, '');
+    // ① まずHTMLエスケープ
+    let escapedDesc = escapeHtml(rawDesc);
+    // ② 改行を<br>に変換
+    escapedDesc = escapedDesc.replace(/\n/g, '<br>');
+    // ③ URLをリンク化
+    escapedDesc = escapedDesc.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color:#065fd4; text-decoration:underline;">$1</a>');
+
+    const chName = metaData.uploader || metaData.author || metaData.channelName || metaData.uploaderName || '不明';
+    let chId = metaData.channelId || metaData.authorId || (metaData.uploaderUrl?.split('/').pop() || '');
+    let chThumb = metaData.uploaderAvatar || metaData.avatar || metaData.thumbnail || '';
+
+
+    let subscriberCount = metaData.subscriberCount ?? 0; 
+    if (chId) {
+      try {
+        const channelData = await pipedFetch(`/channel/${chId}`);
+        if (channelData) {
+
+          if (channelData.avatarUrl && !channelData.avatarUrl.includes('/vi/') && !channelData.avatarUrl.includes('thumbnail')) {
+            chThumb = channelData.avatarUrl;
+          }
+
+          if (typeof channelData.subscriberCount === 'number' && channelData.subscriberCount > 0) {
+            subscriberCount = channelData.subscriberCount;
+            console.log(`登録者数を /channel から上書き: ${subscriberCount}`);
+          } else if (channelData.subscriberCount === -1 || channelData.subscriberCount === null) {
+            subscriberCount = '非公開';  // 非公開チャンネルの場合
+          }
+        }
+      } catch (err) {
+        console.warn('チャンネル情報取得失敗（登録者数/アイコン）:', err);
+      }
+    }
+
+    const chSubs = typeof subscriberCount === 'number' 
+      ? fmtNum(subscriberCount) 
+      : (subscriberCount === '非公開' ? '非公開' : '---');
+
+    if (metaData.title) {
+      addToHistory(videoId, metaData.title, metaData.thumbnail || '', chName, metaData.uploaderUrl || (chId ? `/channel/${chId}` : ''));
+    }
+
+    const defaultPlayer = localStorage.getItem('defaultPlayer') || 'api2-original2';
+
+    // HTML描画 
+    app.innerHTML = `
+      <div class="watch-container">
+        <div class="main-col">
+
+<div class="player-box">
+            <iframe id="videoIframe"
+                    src="https://www.youtube.com/embed/${videoId}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    style="width:100%;height:100%;">
+            </iframe>
+          </div>
+          <div class="player-meta">
+            <h1>${escapeHtml(title)}</h1>
+            <div class="stats">
+              <div>${views} 回視聴</div>
+              <div>・</div>
+              <div>${uploaded}</div>
+              <div style="margin-left:auto;font-weight:700">${likes} 👍</div>
+    <select id="playerSelect">
+  <option value="official" ${defaultPlayer === 'official' ? 'selected' : ''}>
+    公式プレイヤー（YouTube埋め込み）
+  </option>
+  <option value="api1-original1" ${defaultPlayer === 'api1-original1' ? 'selected' : ''}>
+    API1・オリジナル1（高画質）
+  </option>
+  <option value="api1-original2" ${defaultPlayer === 'api1-original2' ? 'selected' : ''}>
+    API1・オリジナル2（音声込み）
+  </option>
+  <option value="api2-original1" ${defaultPlayer === 'api2-original1' ? 'selected' : ''}>
+    API2・オリジナル1（高画質）
+  </option>
+  <option value="api2-original2" ${defaultPlayer === 'api2-original2' ? 'selected' : ''}>
+    API2・オリジナル2（音声込み）
+  </option>
+</select>
+            </div>
+            <div class="channel-row">
+
+            <img src="${chThumb}" alt="" onerror="this.src='https://via.placeholder.com/48?text=Ch'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+            <div class="ch-info">
+              <div style="font-weight:700">
+                <a href="#channel=${chId}" class="watch-ch-link" style="text-decoration:none;color:inherit">
+                  ${escapeHtml(chName)}
+                </a>
+              </div>
+              <div style="color:#606060;font-size:13px">${chSubs} 人の登録者</div>  
+            </div>
+            <button class="btn-sub" id="downloadMainBtn">ダウンロード</button>
+          </div>
+
+          <div id="descriptionArea" style="margin-top:16px; color:#333; line-height:1.5; word-break:break-word;">
+            <div id="descriptionContainer" style="max-height:4.8em; overflow:hidden; transition:max-height 0.4s ease;">
+              ${escapedDesc || '（説明がありません）'}
+            </div>
+            ${escapedDesc.length > 300 ? `
+              <div style="margin-top:8px;">
+                <a id="expandDesc" href="#" style="color:#065fd4; font-weight:500; cursor:pointer; text-decoration:none; display:block;">
+                  もっと見る
+                </a>
+                <a id="collapseDesc" href="#" style="color:#065fd4; font-weight:500; cursor:pointer; text-decoration:none; display:none;">
+                  折りたたむ
+                </a>
+              </div>
+            ` : ''}
+          </div>
+<div class="comments" id="commentsArea">
+              <h3 style="margin:24px 0 12px;">コメント</h3>
+              <div id="commentsList"></div>
+              <div id="commentsSentinel" style="height:32px"></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="side-col">
+          <div style="font-weight:700; margin-bottom:12px;">次に再生</div>
+          <div id="relatedList"></div>
+        </aside>
+      </div>
+    `;
+
+
+const playerSelect = document.getElementById('playerSelect');
+const iframe = document.getElementById('videoIframe');
+
+if (playerSelect && iframe) {
+  const defaultPlayer = localStorage.getItem('defaultPlayer') || 'official';
+  let initialSrc = `https://www.youtube.com/embed/${videoId}?rel=0`;
+  let selectedValue = 'official';
+
+  switch (defaultPlayer) {
+    case 'official':
+      initialSrc = `https://www.youtube.com/embed/${videoId}?rel=0`;
+      selectedValue = 'official';
+      break;
+
+    case 'api1-original1':
+      initialSrc = `/watch.html?id=${videoId}&mode=api1-high`;
+      selectedValue = 'api1-original1';
+      break;
+
+    case 'api1-original2':
+      initialSrc = `/watch.html?id=${videoId}&mode=api1-prog`;
+      selectedValue = 'api1-original2';
+      break;
+
+    case 'api2-original1':
+      initialSrc = `/watch.html?id=${videoId}`;
+      selectedValue = 'api2-original1';
+      break;
+
+    case 'api2-original2':
+      initialSrc = `/watch.html?id=${videoId}&mode=360`;
+      selectedValue = 'api2-original2';
+      break;
+
+    default:
+
+      initialSrc = `https://www.youtube.com/embed/${videoId}?rel=0`;
+      selectedValue = 'official';
+  }
+
+  iframe.src = initialSrc;
+  playerSelect.value = selectedValue;
+
+
+  playerSelect.addEventListener('change', () => {
+    const val = playerSelect.value;
+    let newSrc = `https://www.youtube.com/embed/${videoId}?rel=0`;
+
+    switch (val) {
+      case 'official':
+        newSrc = `https://www.youtube.com/embed/${videoId}?rel=0`;
+        break;
+      case 'api1-original1':
+        newSrc = `/watch.html?id=${videoId}&mode=api1-high`;
+        break;
+      case 'api1-original2':
+        newSrc = `/watch.html?id=${videoId}&mode=api1-prog`;
+        break;
+      case 'api2-original1':
+        newSrc = `/watch.html?id=${videoId}`;
+        break;
+      case 'api2-original2':
+        newSrc = `/watch.html?id=${videoId}&mode=360`;
+        break;
+    }
+
+    iframe.src = newSrc;
+  });
+}
+   
+   // ダウンロードボタン 
+const downloadBtn = document.getElementById('downloadMainBtn');
+if (downloadBtn) {
+  downloadBtn.classList.remove('disabled');
+  downloadBtn.addEventListener('click', async () => {
+    try {
+     
+      let videoData = null;
+
+  
+try {
+  videoData = await fetchFastestNetlify(videoId);
+  if (videoData) {
+    console.log('ダウンロード用データ: K-tube API成功');
+  }
+} catch (e) {
+  console.warn('K-tubeダウンロードAPI失敗:', e);
+}
+
+   
+      if (!videoData) {
+        const proxyRes = await fetch(`/api/v2/video?v=${videoId}`);
+        if (proxyRes.ok) {
+          videoData = await proxyRes.json();
+          console.log('ダウンロード用データ: /api/v2/video から取得');
+        }
+      }
+
+
+      if (!videoData) {
+        throw new Error('ダウンロード用メタデータを取得できませんでした');
+      }
+
+     
+      const prog = videoData.videoFormats?.find(f =>
+        f.type?.includes('video/mp4') &&
+        (f.qualityLabel?.includes('360') || f.itag === '18' || f.itag === 18)
+      ) || videoData.formatStreams?.find(f => f.itag === '18');
+
+      if (prog?.url) {
+     
+        let downloadUrl = prog.url;
+        if (!downloadUrl.startsWith('http')) {
+          downloadUrl = `https://splendid-jelly-e731bd.netlify.app/${downloadUrl}`;
+        }
+        window.open(downloadUrl, '_blank');
+      } else {
+        alert("ストリームが見つかりませんでした。\n他の画質を試すか、後ほどお試しください。");
+      }
+
+    } catch (e) {
+      console.error('ダウンロードエラー:', e);
+      alert("ダウンロードの準備に失敗しました。\nコンソールを確認するか、後ほどお試しください。");
+    }
+  });
+}
+
+
+    const watchChLink = app.querySelector('.watch-ch-link');
+    if (watchChLink) {
+      watchChLink.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chId) location.hash = `channel=${chId}`;
+      });
+    }   
+
+
+    const commentsArea = document.getElementById('commentsArea');
+    if (commentsArea) setupComments(videoId);
+
+ 
+  const relatedList = document.getElementById('relatedList');
+if (relatedList) {
+  relatedList.innerHTML = '<div style="padding:20px; text-align:center; color:#606060;">読み込み中...</div>';
+
+  try {
+    let items = [];
+
+    // 🔥 強化検索クエリ
+    let searchQuery = metaData.title || videoId;
+
+    if ((metaData.uploader || metaData.uploaderName)) {
+      searchQuery += ' ' + (metaData.uploader || metaData.uploaderName);
+    }
+
+    // ① 1回目検索（多めに取得）
+    const relatedData = await pipedFetch('/search', {
+      q: searchQuery,
+      filter: 'videos'
+    });
+
+    items = Array.isArray(relatedData) ? relatedData :
+            (relatedData?.items || relatedData?.results || relatedData?.videos || []);
+
+    // 🔥 型フィルタ + 重複排除
+    items = items.filter(item => {
+      const relVid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
+      return relVid && relVid !== videoId;
+    });
+
+    // ② 足りなければタイトルのみで再検索
+    if (items.length < 6) {
+      const fallback = await pipedFetch('/search', {
+        q: metaData.title || videoId
+      });
+
+      let more = Array.isArray(fallback) ? fallback :
+                 (fallback?.items || fallback?.results || fallback?.videos || []);
+
+      more = more.filter(item => {
+        const relVid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
+        return relVid && relVid !== videoId;
+      });
+
+      items = [...items, ...more];
+    }
+
+    // 🔥 重複動画ID削除
+    const seen = new Set();
+    items = items.filter(item => {
+      const relVid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
+      if (seen.has(relVid)) return false;
+      seen.add(relVid);
+      return true;
+    });
+
+    // 🔥 最低6件保証
+    const finalItems = items.slice(0, 6);
+
+    if (finalItems.length) {
+      relatedList.innerHTML = '';
+
+      finalItems.forEach(item => {
+        const relVid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
+        const thumb = `https://i.ytimg.com/vi/${relVid}/hqdefault.jpg`;
+
+        const div = document.createElement('div');
+        div.className = 'related-item';
+        div.innerHTML = `
+          <div class="related-thumb">
+            <img src="${thumb}" alt="" loading="lazy" decoding="async"
+              onerror="this.src='https://i.ytimg.com/vi/${relVid}/mqdefault.jpg'">
+          </div>
+          <div class="related-info">
+            <div class="title">${escapeHtml(item.title || '(タイトルなし)')}</div>
+            <div style="color:#606060;font-size:13px">
+              ${escapeHtml(item.uploaderName || item.uploader || '不明')} ・ ${fmtNum(item.views || 0)} 回
+            </div>
+          </div>
+        `;
+        div.addEventListener('click', () => location.hash = `watch=${relVid}`);
+        relatedList.appendChild(div);
+      });
+
+    } else {
+      relatedList.innerHTML = '<div style="padding:20px; color:#606060;">関連動画が見つかりませんでした</div>';
+    }
+
+  } catch (e) {
+    console.error('関連動画取得失敗:', e);
+    relatedList.innerHTML = '<div style="padding:20px; color:#c00;">関連動画の読み込みに失敗しました</div>';
+  }
+}
+    
+    setTimeout(() => {
+      const container = document.getElementById('descriptionContainer');
+      const expandLink = document.getElementById('expandDesc');
+      const collapseLink = document.getElementById('collapseDesc');
+
+      if (container && expandLink) {
+        expandLink.addEventListener('click', e => {
+          e.preventDefault();
+          container.style.maxHeight = 'none';
+          expandLink.style.display = 'none';
+          if (collapseLink) collapseLink.style.display = 'block';
+        });
+      }
+
+      if (collapseLink) {
+        collapseLink.addEventListener('click', e => {
+          e.preventDefault();
+          container.style.maxHeight = '4.8em';
+          collapseLink.style.display = 'none';
+          if (expandLink) expandLink.style.display = 'block';
+        });
+      }
+    }, 300);
+
+// 動画ページでは初期状態でサイドバーを隠す（ユーザーはメニューから表示可能）
+toggleFixedSidebar(false);
+
 
   } catch (fatalErr) {
     console.error('renderWatch 全体エラー:', fatalErr);
@@ -490,417 +913,6 @@ async function renderWatch(videoId) {
     `;
   }
 }
-
-function getWatchSkeletonHTML(videoId) {
-  return `
-    <div class="watch-container">
-      <div class="main-col">
-        <!-- プレイヤー部分 -->
-        <div class="player-box">
-          <iframe id="videoIframe"
-                  src="https://www.youtube.com/embed/${videoId}"
-                  frameborder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                  style="width:100%;height:100%;"></iframe>
-        </div>
-
-        <!-- メタ情報エリア（スケルトン） -->
-        <div id="videoMetaSkeleton">
-          <div class="skeleton skeleton-title"></div>
-          <div class="skeleton skeleton-text" style="width:40%"></div>
-
-          <div style="display:flex; align-items:center; gap:12px; margin:16px 0;">
-            <div class="skeleton skeleton-avatar"></div>
-            <div>
-              <div class="skeleton skeleton-text" style="width:120px"></div>
-              <div class="skeleton skeleton-text" style="width:80px; margin-top:4px;"></div>
-            </div>
-          </div>
-
-          <div class="skeleton skeleton-text"></div>
-          <div class="skeleton skeleton-text" style="width:70%"></div>
-        </div>
-
-        <!-- コメントエリア（スケルトン） -->
-        <div id="commentsAreaSkeleton" style="margin-top:24px;">
-          <div class="skeleton skeleton-text" style="width:50%"></div>
-          <div class="skeleton skeleton-text"></div>
-          <div class="skeleton skeleton-text"></div>
-        </div>
-      </div>
-
-      <!-- 関連動画（スケルトン） -->
-
-<aside class="side-col">
-  <div style="font-weight:700; margin-bottom:12px;">次に再生</div>
-  <div id="relatedList">
-    ${Array(4).fill(0).map(() => `
-      <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <div class="skeleton" style="width:168px; height:94px; flex-shrink:0;"></div>
-        <div style="flex:1;">
-          <div class="skeleton skeleton-text"></div>
-          <div class="skeleton skeleton-text" style="width:60%"></div>
-        </div>
-      </div>
-    `).join('')}
-  </div>
-</aside>
-    </div>
-  `;
-}
-
-async function fetchMetadataWithTimeout(videoId, timeoutMs) {
-  let metaData = {};
-  let source = "none";
-
-  const backends = [
-    {
-      name: "K-tube API (race)",
-      fetch: async () => {
-        const data = await fetchFastestNetlify(videoId);
-        if (!data || data.error) throw new Error('Invalid data');
-        return data;
-      }
-    },
-    {
-      name: "Piped",
-      fetch: async () => {
-        // Pipedの動画情報API（/streams/videoId）を利用
-        const data = await pipedFetch(`/streams/${videoId}`);
-        if (!data || data.error) throw new Error('Invalid data');
-        return data;
-      }
-    }
-  ];
-
-  for (const backend of backends) {
-    try {
-      console.log(`Trying metadata backend: ${backend.name}`);
-      const data = await fetchWithTimeout(backend.fetch(), timeoutMs);
-      metaData = normalizeMetadata(data, backend.name);
-      source = backend.name;
-      console.log(`Metadata obtained from: ${source} (成功)`);
-      break; // 成功したらループを抜ける
-    } catch (err) {
-      console.warn(`${backend.name} failed or timed out:`, err.message);
-      // タイムアウトでも即座に次のバックエンドへ
-    }
-  }
-
-  // 最終フォールバック：Piped Search（動画IDで検索）
-  if (!metaData.title) {
-    try {
-      const searchData = await pipedFetch('/search', { q: videoId, filter: 'videos' });
-      const item = (searchData?.items || searchData || []).find(it =>
-        it.url?.includes(videoId) || it.url?.includes(`v=${videoId}`)
-      );
-      if (item) {
-        metaData = {
-          title: item.title || `動画（ID: ${videoId}）`,
-          description: item.shortDescription || '説明文なし',
-          thumbnail: item.thumbnail || '',
-          uploader: item.uploaderName || '不明',
-          viewCount: item.views || 0,
-          uploaded: item.uploaded || '',
-          channelName: item.uploaderName || '',
-          channelId: item.uploaderUrl?.split('/').pop() || '',
-        };
-        source = "Piped Search (minimal)";
-      }
-    } catch (e) {
-      console.warn("最終フォールバック失敗", e);
-    }
-  }
-
-  return { metaData, source };
-}
-
-function fillMetadataInSkeleton(metaData, source, videoId) {
-  const title = metaData.title || `動画（ID: ${videoId}）`;
-  const views = fmtNum(metaData.viewCount ?? metaData.views ?? 0);
-  const likes = fmtNum(metaData.likeCount ?? 0);
-  let uploaded = '---';
-  if (metaData.published || metaData.uploadDate || metaData.uploaded) {
-    try {
-      uploaded = timeAgo(new Date(metaData.published || metaData.uploadDate || metaData.uploaded).toISOString());
-    } catch {}
-  }
-
-  let rawDesc = metaData.description || metaData.shortDescription || '説明文は現在取得できませんでした';
-  rawDesc = rawDesc.trim();
-  rawDesc = rawDesc.replace(/^\s+|\s+$/g, '');
-  rawDesc = rawDesc.replace(/^(?:\r\n|\r|\n)+/, '');
-  let escapedDesc = escapeHtml(rawDesc).replace(/\n/g, '<br>');
-  escapedDesc = escapedDesc.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color:#065fd4; text-decoration:underline;">$1</a>');
-
-  const chName = metaData.uploader || metaData.author || metaData.channelName || metaData.uploaderName || '不明';
-  const chId = metaData.channelId || metaData.authorId || (metaData.uploaderUrl?.split('/').pop() || '');
-  let chThumb = metaData.uploaderAvatar || metaData.avatar || metaData.thumbnail || '';
-  let subscriberCount = metaData.subscriberCount ?? 0;
-
-  // チャンネル情報を取得（非同期だがここでは簡易的に）
-  if (chId) {
-    getChannelThumbPiped(chId).then(avatar => {
-      if (avatar) chThumb = avatar;
-      updateChannelAvatar(chThumb);
-    });
-    pipedFetch(`/channel/${chId}`).then(channelData => {
-      if (typeof channelData.subscriberCount === 'number' && channelData.subscriberCount > 0) {
-        subscriberCount = channelData.subscriberCount;
-      }
-      updateSubscriberCount(subscriberCount);
-    }).catch(() => {});
-  }
-
-  const chSubs = typeof subscriberCount === 'number'
-    ? fmtNum(subscriberCount)
-    : (subscriberCount === '非公開' ? '非公開' : '---');
-
-  // デフォルトプレイヤー選択用のセレクトボックスも含めて構築
-  const defaultPlayer = localStorage.getItem('defaultPlayer') || 'official';
-  const metaHTML = `
-    <div class="player-meta">
-      <h1>${escapeHtml(title)}</h1>
-      <div class="stats">
-        <div>${views} 回視聴</div>
-        <div>・</div>
-        <div>${uploaded}</div>
-        <div style="margin-left:auto;font-weight:700">${likes} 👍</div>
-        <select id="playerSelect">
-          <option value="official" ${defaultPlayer === 'official' ? 'selected' : ''}>公式プレイヤー</option>
-          <option value="api1-original1" ${defaultPlayer === 'api1-original1' ? 'selected' : ''}>API1・高画質</option>
-          <option value="api1-original2" ${defaultPlayer === 'api1-original2' ? 'selected' : ''}>API1・音声込み</option>
-          <option value="api2-original1" ${defaultPlayer === 'api2-original1' ? 'selected' : ''}>API2・高画質</option>
-          <option value="api2-original2" ${defaultPlayer === 'api2-original2' ? 'selected' : ''}>API2・音声込み</option>
-        </select>
-      </div>
-      <div class="channel-row">
-        <img id="channelAvatarImg" src="${chThumb}" alt="" onerror="this.src='https://via.placeholder.com/48?text=Ch'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
-        <div class="ch-info">
-          <div style="font-weight:700">
-            <a href="#channel=${chId}" class="watch-ch-link" style="text-decoration:none;color:inherit">${escapeHtml(chName)}</a>
-          </div>
-          <div id="subscriberCount" style="color:#606060;font-size:13px">${chSubs} 人の登録者</div>
-        </div>
-        <button class="btn-sub" id="downloadMainBtn">ダウンロード</button>
-      </div>
-
-      <div id="descriptionArea" style="margin-top:16px; color:#333; line-height:1.5; word-break:break-word;">
-        <div id="descriptionContainer" style="max-height:4.8em; overflow:hidden; transition:max-height 0.4s ease;">
-          ${escapedDesc || '（説明がありません）'}
-        </div>
-        ${escapedDesc.length > 300 ? `
-          <div style="margin-top:8px;">
-            <a id="expandDesc" href="#" style="color:#065fd4; font-weight:500; cursor:pointer; text-decoration:none; display:block;">もっと見る</a>
-            <a id="collapseDesc" href="#" style="color:#065fd4; font-weight:500; cursor:pointer; text-decoration:none; display:none;">折りたたむ</a>
-          </div>
-        ` : ''}
-      </div>
-    </div>
-  `;
-
-  // スケルトンと差し替え
-  const skeleton = document.getElementById('videoMetaSkeleton');
-  if (skeleton) {
-    skeleton.outerHTML = metaHTML;
-    // プレイヤー切替イベントを設定
-    setupPlayerSwitch(videoId);
-    // ダウンロードボタンのイベント（後で設定）
-    setupDownloadButton(videoId);
-    // チャンネルリンクのイベント
-    document.querySelector('.watch-ch-link')?.addEventListener('click', e => {
-      e.preventDefault();
-      location.hash = `channel=${chId}`;
-    });
-    // 説明文の折りたたみイベント
-    setupDescriptionToggle();
-  }
-}
-
-// チャンネルアバター更新用（非同期で届いたら差し替え）
-function updateChannelAvatar(url) {
-  const img = document.getElementById('channelAvatarImg');
-  if (img) img.src = url;
-}
-function updateSubscriberCount(count) {
-  const el = document.getElementById('subscriberCount');
-  if (el) {
-    el.textContent = (typeof count === 'number' ? fmtNum(count) : '---') + ' 人の登録者';
-  }
-}
-
-function setupPlayerSwitch(videoId) {
-  const select = document.getElementById('playerSelect');
-  const iframe = document.getElementById('videoIframe');
-  if (!select || !iframe) return;
-  select.addEventListener('change', () => {
-    const val = select.value;
-    iframe.src = getPlayerSrc(videoId, val);
-  });
-}
-
-function getPlayerSrc(videoId, playerType) {
-  switch (playerType) {
-    case 'official': return `https://www.youtube.com/embed/${videoId}?rel=0`;
-    case 'api1-original1': return `/watch.html?id=${videoId}&mode=api1-high`;
-    case 'api1-original2': return `/watch.html?id=${videoId}&mode=api1-prog`;
-    case 'api2-original1': return `/watch.html?id=${videoId}`;
-    case 'api2-original2': return `/watch.html?id=${videoId}&mode=360`;
-    default: return `https://www.youtube.com/embed/${videoId}?rel=0`;
-  }
-}
-
-function setupDownloadButton(videoId) {
-  const btn = document.getElementById('downloadMainBtn');
-  if (!btn) return;
-  btn.addEventListener('click', async () => {
-    try {
-      let videoData = null;
-      try {
-        videoData = await fetchFastestNetlify(videoId);
-      } catch (e) {
-        console.warn('K-tubeダウンロード失敗');
-      }
-      if (!videoData) {
-        const proxyRes = await fetch(`/api/v2/video?v=${videoId}`);
-        if (proxyRes.ok) videoData = await proxyRes.json();
-      }
-      if (!videoData) throw new Error('ダウンロード用データが取得できません');
-      const prog = videoData.videoFormats?.find(f =>
-        f.type?.includes('video/mp4') && (f.qualityLabel?.includes('360') || f.itag === '18' || f.itag === 18)
-      ) || videoData.formatStreams?.find(f => f.itag === '18');
-      if (prog?.url) {
-        let downloadUrl = prog.url;
-        if (!downloadUrl.startsWith('http')) downloadUrl = `https://splendid-jelly-e731bd.netlify.app/${downloadUrl}`;
-        window.open(downloadUrl, '_blank');
-      } else {
-        alert('ストリームが見つかりませんでした');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('ダウンロードに失敗しました');
-    }
-  });
-}
-
-function setupDescriptionToggle() {
-  setTimeout(() => {
-    const container = document.getElementById('descriptionContainer');
-    const expand = document.getElementById('expandDesc');
-    const collapse = document.getElementById('collapseDesc');
-    if (expand) {
-      expand.addEventListener('click', e => {
-        e.preventDefault();
-        container.style.maxHeight = 'none';
-        expand.style.display = 'none';
-        if (collapse) collapse.style.display = 'block';
-      });
-    }
-    if (collapse) {
-      collapse.addEventListener('click', e => {
-        e.preventDefault();
-        container.style.maxHeight = '4.8em';
-        collapse.style.display = 'none';
-        if (expand) expand.style.display = 'block';
-      });
-    }
-  }, 300);
-}
-
-async function loadRelatedVideosToSkeleton(videoId, metaData) {
-  const relatedList = document.getElementById('relatedList');
-  if (!relatedList) return;
-  // スケルトンが初期表示済みなので、そのまま非同期で実データを取得
-  try {
-    let items = [];
-    const searchQuery = (metaData?.title || videoId) + ' ' + (metaData?.uploader || '');
-    const relatedData = await pipedFetch('/search', { q: searchQuery, filter: 'videos' });
-    items = Array.isArray(relatedData) ? relatedData : (relatedData?.items || relatedData?.results || []);
-    items = items.filter(item => {
-      const relVid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
-      return relVid && relVid !== videoId;
-    });
-    if (items.length < 6) {
-      const fallback = await pipedFetch('/search', { q: metaData?.title || videoId });
-      let more = Array.isArray(fallback) ? fallback : (fallback?.items || []);
-      more = more.filter(item => {
-        const relVid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
-        return relVid && relVid !== videoId;
-      });
-      items = [...items, ...more];
-    }
-    // 重複除去
-    const seen = new Set();
-    items = items.filter(item => {
-      const relVid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
-      if (seen.has(relVid)) return false;
-      seen.add(relVid);
-      return true;
-    });
-    const finalItems = items.slice(0, 6);
-    relatedList.innerHTML = finalItems.length ? '' : '<div style="padding:20px; color:#606060;">関連動画がありません</div>';
-    finalItems.forEach(item => {
-      const relVid = item.url?.split('v=')[1] || item.url?.split('/').pop() || '';
-      const thumb = `https://i.ytimg.com/vi/${relVid}/hqdefault.jpg`;
-      const div = document.createElement('div');
-      div.className = 'related-item';
-      div.innerHTML = `
-        <div class="related-thumb"><img src="${thumb}" alt="" loading="lazy"></div>
-        <div class="related-info">
-          <div class="title">${escapeHtml(item.title || '')}</div>
-          <div style="color:#606060;font-size:13px">${escapeHtml(item.uploaderName || '')} ・ ${fmtNum(item.views || 0)} 回</div>
-        </div>
-      `;
-      div.addEventListener('click', () => location.hash = `watch=${relVid}`);
-      relatedList.appendChild(div);
-    });
-  } catch (e) {
-    relatedList.innerHTML = '<div style="padding:20px; color:#c00;">関連動画の読み込みに失敗しました</div>';
-  }
-}
-
-function setupCommentsInSkeleton(videoId) {
-  let commentsSkeleton = document.getElementById('commentsAreaSkeleton');
-
-  // ★ もしスケルトンが存在しない場合（予期せぬ消滅）は、自力で生成する
-  if (!commentsSkeleton) {
-    console.warn('commentsAreaSkeleton が見つかりません。強制的に生成します。');
-    const mainCol = document.querySelector('.main-col');
-    if (!mainCol) {
-      console.error('main-col が見つかりません');
-      return;
-    }
-    // コメントブロックを main-col の末尾に追加
-    const newBlock = document.createElement('div');
-    newBlock.id = 'commentsAreaSkeleton';
-    newBlock.style.marginTop = '24px';
-    newBlock.innerHTML = `
-      <div class="skeleton skeleton-text" style="width:50%"></div>
-      <div class="skeleton skeleton-text"></div>
-      <div class="skeleton skeleton-text"></div>
-    `;
-    mainCol.appendChild(newBlock);
-    commentsSkeleton = newBlock; // 再取得
-  }
-
-  // ここから通常の処理：スケルトンを実際のコメントエリアに置き換え
-  commentsSkeleton.outerHTML = `
-    <div class="comments" id="commentsArea">
-      <h3 style="margin:24px 0 12px;">コメント</h3>
-      <div id="commentsList">
-        <div style="padding: 20px; text-align: center; color: #606060;">コメントを読み込んでいます...</div>
-      </div>
-      <div id="commentsSentinel" style="height:32px"></div>
-    </div>
-  `;
-
-  // DOM 更新を確実にするため、次のイベントループで setupComments を呼ぶ
-  setTimeout(() => {
-    setupComments(videoId);
-  }, 0);
-}
-
      
  function normalizeMetadata(data, source) {
 
