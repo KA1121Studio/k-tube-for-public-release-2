@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-tube Supernova</title>
+<style>
+  body { margin:0; background:#000; overflow:hidden; }
+  canvas { display:block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+c.width=window.innerWidth; c.height=window.innerHeight;
+const W=c.width, H=c.height;
+let t = 0;
+const rings = [];
+const sparks = [];
+const shockwaves = [];
+
+// 爆発リング
+for(let i=0;i<25;i++) rings.push({
+  r: 0,
+  maxR: 350 + Math.random()*600,
+  alpha: 1,
+  speed: 6 + Math.random()*15,
+  color: `hsl(${Math.random()*30+10}, 100%, 70%)`,
+  width: 1 + Math.random()*5
+});
+
+// 火花
+for(let i=0;i<500;i++) sparks.push({
+  angle: Math.random()*Math.PI*2,
+  dist: 0,
+  speed: 5 + Math.random()*20,
+  alpha: 1,
+  color: `hsl(${Math.random()*40+15}, 100%, ${50+Math.random()*50}%)`,
+  size: 1 + Math.random()*5
+});
+
+// 衝撃波
+for(let i=0;i<3;i++) shockwaves.push({
+  r: 0,
+  maxR: Math.max(W,H) * 0.8,
+  alpha: 0.8,
+  speed: 25 + i*8,
+  active: false
+});
+
+const HEARTBEAT_SPEED = 0.15;
+
+function draw() {
+  t++;
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(0,0,W,H);
+
+  // 中心の光球（コア）
+  const coreRadius = t <= 50
+    ? 140 + Math.sin(t * HEARTBEAT_SPEED) * 25
+    : 140 + Math.sin(50 * HEARTBEAT_SPEED) * 25;
+
+  const coreGrd = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, coreRadius);
+  coreGrd.addColorStop(0, 'rgba(255,255,255,1)');
+  coreGrd.addColorStop(0.2, 'rgba(255,200,0,0.9)');
+  coreGrd.addColorStop(0.6, 'rgba(255,0,0,0.6)');
+  coreGrd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = coreGrd;
+  ctx.beginPath(); ctx.arc(W/2, H/2, coreRadius, 0, Math.PI*2); ctx.fill();
+
+  if (t === 30) shockwaves.forEach(sw => sw.active = true);
+
+  for (let sw of shockwaves) {
+    if (!sw.active) continue;
+    sw.r += sw.speed;
+    sw.alpha -= 0.01;
+    if (sw.alpha <= 0) continue;
+    ctx.save();
+    ctx.globalAlpha = sw.alpha;
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 6;
+    ctx.shadowColor = 'white';
+    ctx.shadowBlur = 30;
+    ctx.beginPath(); ctx.arc(W/2, H/2, sw.r, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  for (let r of rings) {
+    if (r.r < r.maxR) { r.r += r.speed; r.alpha -= 0.003; }
+    if (r.alpha <= 0) continue;
+    ctx.save();
+    ctx.globalAlpha = r.alpha;
+    ctx.strokeStyle = r.color;
+    ctx.lineWidth = r.width;
+    ctx.shadowColor = r.color;
+    ctx.shadowBlur = 20;
+    ctx.beginPath(); ctx.arc(W/2, H/2, r.r, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  for (let s of sparks) {
+    s.dist += s.speed;
+    s.alpha -= 0.006;
+    if (s.alpha <= 0) continue;
+    const x = W/2 + Math.cos(s.angle) * s.dist;
+    const y = H/2 + Math.sin(s.angle) * s.dist;
+    ctx.save();
+    ctx.globalAlpha = s.alpha;
+    ctx.fillStyle = s.color;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 10;
+    ctx.fillRect(x, y, s.size, s.size);
+    ctx.restore();
+  }
+
+  if (t > 50) {
+    const alpha = Math.min(1, (t-50) / 60);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 140px "Arial Black"';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#ff0000';
+    ctx.shadowBlur = 70;
+    ctx.fillText('K-tube', W/2, H/2);
+    ctx.shadowColor = '#ffaa00';
+    ctx.shadowBlur = 120;
+    ctx.fillText('K-tube', W/2, H/2);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = '22px "Arial", sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Developed by KA1121Studio', W/2, H/2 + 90);
+    ctx.restore();
+  }
+
+  if (t < 140) {
+    requestAnimationFrame(draw);
+  } else {
+    // フェードアウト → スプラッシュ終了（alertなし）
+    c.style.transition = 'opacity 0.5s';
+    c.style.opacity = '0';
+    setTimeout(() => {
+      // ここでメイン画面を表示する処理に差し替えてください
+      // 例: document.getElementById('app').style.display = 'block';
+      c.style.display = 'none';
+    }, 500);
+  }
+}
+draw();
+</script>
+</body>
+</html>
