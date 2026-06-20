@@ -137,20 +137,34 @@ function draw() {
     ctx.restore();
   }
 
-  if (t < 140) {
-    requestAnimationFrame(draw);
-  } else {
-    // フェードアウト → スプラッシュ終了（alertなし）
-    c.style.transition = 'opacity 0.5s';
-    c.style.opacity = '0';
-    setTimeout(() => {
-      // ここでメイン画面を表示する処理に差し替えてください
-      // 例: document.getElementById('app').style.display = 'block';
-      c.style.display = 'none';
-    }, 500);
-  }
+if (t < 140) {
+  requestAnimationFrame(draw);
+} else {
+  c.style.transition = 'opacity 0.5s';
+  c.style.opacity = '0';
+
+  setTimeout(() => {
+    parent.postMessage('startupFinished', '*');
+  }, 500);
+}
 }
 draw();
+  function skipStartup() {
+  parent.postMessage('skipStartup', '*');
+}
+
+c.style.cursor = 'pointer';
+
+// クリック・タップ対応
+c.addEventListener('pointerdown', skipStartup);
+
+// スペースキー対応
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    skipStartup();
+  }
+});
 </script>
 </body>
 </html>
