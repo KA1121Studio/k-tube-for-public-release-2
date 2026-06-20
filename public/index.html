@@ -200,42 +200,41 @@ if (
   window.location.pathname === "/" ||
   window.location.pathname === "/index.html"
 ) {
-
-  function skipStartup() {
-    const startup = document.getElementById('startup-container');
-    if (!startup) return;
-
-    startup.classList.add('hide');
-
-    setTimeout(() => {
-      startup.remove();
-    }, 1000);
-  }
-
   window.addEventListener('load', () => {
+    const startup = document.getElementById('startup-container');
 
-    // ダブルクリックでスキップ
-    document.addEventListener('dblclick', skipStartup);
+    let skipped = false;
 
-    // Spaceキーでスキップ
-    document.addEventListener('keydown', (e) => {
-      if (
-        e.code === 'Space' ||
-        e.key === ' ' ||
-        e.key === 'Spacebar'
-      ) {
-        e.preventDefault();
-        skipStartup();
-      }
+    function closeStartup() {
+      if (skipped || !startup) return;
+      skipped = true;
+
+      startup.classList.add('hide');
+
+      setTimeout(() => {
+        startup.remove();
+      }, 1000);
+    }
+
+    // 10秒後に自動終了
+    setTimeout(closeStartup, 10000);
+
+    // クリック
+    startup.addEventListener('click', closeStartup);
+
+    // タップ
+    startup.addEventListener('touchstart', closeStartup, {
+      passive: true
     });
 
-    // 自動終了（10秒後）
-    setTimeout(() => {
-      skipStartup();
-    }, 10000);
-
+    // スペースキー
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        closeStartup();
+      }
+    });
   });
-
 } else {
   document.getElementById('startup-container')?.remove();
 }
