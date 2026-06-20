@@ -200,17 +200,42 @@ if (
   window.location.pathname === "/" ||
   window.location.pathname === "/index.html"
 ) {
-  window.addEventListener('load', () => {
+
+  function skipStartup() {
+    const startup = document.getElementById('startup-container');
+    if (!startup) return;
+
+    startup.classList.add('hide');
+
     setTimeout(() => {
-      const startup = document.getElementById('startup-container');
+      startup.remove();
+    }, 1000);
+  }
 
-      startup.classList.add('hide');
+  window.addEventListener('load', () => {
 
-      setTimeout(() => {
-        startup.remove();
-      }, 1000);
+    // ダブルクリックでスキップ
+    document.addEventListener('dblclick', skipStartup);
+
+    // Spaceキーでスキップ
+    document.addEventListener('keydown', (e) => {
+      if (
+        e.code === 'Space' ||
+        e.key === ' ' ||
+        e.key === 'Spacebar'
+      ) {
+        e.preventDefault();
+        skipStartup();
+      }
+    });
+
+    // 自動終了（10秒後）
+    setTimeout(() => {
+      skipStartup();
     }, 10000);
+
   });
+
 } else {
   document.getElementById('startup-container')?.remove();
 }
