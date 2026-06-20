@@ -202,7 +202,6 @@ if (
 ) {
   window.addEventListener('load', () => {
     const startup = document.getElementById('startup-container');
-
     let skipped = false;
 
     function closeStartup() {
@@ -216,21 +215,12 @@ if (
       }, 1000);
     }
 
-    // 10秒後に自動終了
-    setTimeout(closeStartup, 10000);
-
-    // クリック
-    startup.addEventListener('click', closeStartup);
-
-    // タップ
-    startup.addEventListener('touchstart', closeStartup, {
-      passive: true
-    });
-
-    // スペースキー
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
+    // startup.htmlからの通知を受信
+    window.addEventListener('message', (e) => {
+      if (
+        e.data === 'skipStartup' ||
+        e.data === 'startupFinished'
+      ) {
         closeStartup();
       }
     });
