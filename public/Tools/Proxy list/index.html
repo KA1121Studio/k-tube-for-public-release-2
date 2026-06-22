@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ウェブ</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Inter', 'Segoe UI', 'Noto Sans JP', system-ui, sans-serif;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+    color: #1e293b;
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+  }
+  .container {
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  header h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+  }
+  header p {
+    color: #64748b;
+    font-size: 1.1rem;
+  }
+  .category {
+    margin-bottom: 3rem;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 1.5rem 1.8rem 1.8rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.8);
+  }
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .category-header .icon {
+    font-size: 1.8rem;
+  }
+  .category-header h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #334155;
+  }
+  /* カードグリッド: モバイル1列 / タブレット2列 / PCで最大3列 */
+  .card-grid {
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 700px) {
+    .card-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1100px) {
+    .card-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .card {
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
+    padding: 1.2rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    border: 1px solid rgba(0,0,0,0.04);
+    border-left: 5px solid #ccc;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    transition: all 0.2s ease;
+    word-break: break-word;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px rgba(0,0,0,0.1);
+    border-left-width: 7px;
+  }
+  .service-badge {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.25rem 0.8rem;
+    border-radius: 20px;
+    color: white;
+    background: #999;
+    align-self: flex-start;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .url-box {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 0.5rem 0.7rem;
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    border: 1px solid #e2e8f0;
+    overflow-wrap: anywhere;
+    transition: background 0.15s;
+  }
+  .url-box a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .url-box a:hover {
+    text-decoration: underline;
+    color: #1d4ed8;
+  }
+  .feature-text {
+    font-size: 0.9rem;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.2rem;
+  }
+  .feature-text .dot {
+    font-size: 1.2rem;
+  }
+  footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: #94a3b8;
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🕸️ ウェブプロキシ リンク集</h1>
+    <p></p>
+  </header>
+
+  <div id="app"></div>
+  <footer>すべてのリンクは自己責任でご利用ください</footer>
+</div>
+
+<script>
+// ---- サービスごとに色を割り当て (22色ループ) ----
+const palette = [
+  "#e63946","#2a9d8f","#e9c46a","#f4a261","#264653",
+  "#a855f7","#3b82f6","#10b981","#f97316","#ec4899",
+  "#8b5cf6","#06b6d4","#84cc16","#fbbf24","#ef4444",
+  "#0ea5e9","#d946ef","#14b8a6","#f59e0b","#6366f1",
+  "#22c55e","#eab308"
+];
+const serviceColorMap = {};
+let colorCursor = 0;
+function getColor(service) {
+  if (!(service in serviceColorMap)) {
+    serviceColorMap[service] = palette[colorCursor % palette.length];
+    colorCursor++;
+  }
+  return serviceColorMap[service];
+}
+
+// ---- データ構築 ----
+const allSites = [];
+
+function register(service, category, urls, feature) {
+  urls.forEach(raw => {
+    let url = raw.trim();
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    allSites.push({ service, category, url, feature });
+  });
+}
+
+// --- YouTubeプロキシ ---
+register('わかめtube', 'YouTube', [
+  'avlmvvv.onrender.com/login',
+  'wakame-tube-8ln6.onrender.com/wkt',
+  'classroom-google-o1n8.onrender.com/wkt',
+  'wakame-tube-1.onrender.com/wkt',
+  'wakame-tube.vercel.app/'
+], 'youtubeの元祖');
+register('MIN-tube', 'YouTube', [
+  'web-production-80974.up.railway.app/',
+  'hj-ss-sw.vercel.app/',
+  'add-new-someone.vercel.app/',
+  'min-study-study.vercel.app/'
+], '機能性重視');
+register('K-tube', 'YouTube', [
+  'beamish-cheesecake-3d6261.netlify.app/',
+  'gilded-dodol-d7f8e5.netlify.app/',
+  'k-tube-for-public-release-2.vercel.app/',
+  'k-tube-for-public-release-rpwm.onrender.com'
+], 'プロキシ・ゲーム搭載');
+register('仙人tube plus', 'YouTube', [
+  'sennin-tube-plus-production.up.railway.app/'
+], 'Railway最適化版');
+
+// --- Webプロキシ ---
+register('ランマー', 'Webプロキシ', [
+  'rammer.nana.paviliongrup.ro/',
+  'joebidenisgay.giize.com',
+  'shared.learn.acepod.com/',
+  'itrsa.naturalstatehollow.com/',
+  'www.scrsa-for-study.currykarim.com',
+  'learnwithme.verymad.net',
+  'rummer.iei---trumpet-0003.dinprima.ro/',
+  'rummer.iei---trumpet-0004.dinprima.ro/',
+  'rummer.iei---trumpet-0005.dinprima.ro/',
+  'rummer.iei---trumpet-0001.alyaf.com/',
+  'rummer.iei---trumpet-0002.alyaf.com/',
+  'waiwaiwai.rinet.ai/',
+  'iei---trumpet.rinet.ai/'
+], 'ブラウザ型プロキシ');
+register('ユートピア', 'Webプロキシ', [
+  'shedatear.sparks.ddns-ip.net/',
+  'moonlight.sparks.ddns-ip.net/',
+  'renalla.sparks.ddns-ip.net/',
+  'drive.sparks.ddns-ip.net/',
+  'allow.sparks.ddns-ip.net/',
+  'educational.peakconsulting.com.au/',
+  'xz.anjumanallana.in/',
+  'madebybonkyoncord.alptechflow.com/',
+  'utopia.iei---trumpet-0009.dinprima.ro/',
+  'utopia.iei---trumpet-0013.dinprima.ro/',
+  'utopia.iei---trumpet-0006.dinprima.ro/',
+  'utopia.iei---trumpet-0007.dinprima.ro/',
+  'utopia.iei---trumpet-0008.dinprima.ro/',
+  'utopia.iei---trumpet-0002.sesaech.gob.mx/',
+  'utopia.iei---trumpet-0003.swift.cl/',
+  'utopia.iei---trumpet-0001.ovieags.gob.mx/',
+  'utopia.iei---trumpet-0005.swift.cl/',
+  'utopia.iei---trumpet-0004.swift.cl/',
+  'utopia.iei.rinet.ai/',
+  'utopia.iei---trumpet.swift.cl/'
+], 'まじで最強');
+register('Science', 'Webプロキシ', [
+  'k-tube-for-public-release-2.vercel.app/Tools/Science',
+  'k-tube-for-public-release-rpwm.onrender.com/Tools/Science',
+  'luminous-elf-996016.netlify.app/'
+], 'K-tubeオリジナル');
+register('Scienceブラウザ', 'Webプロキシ', [
+  'science-browser.netlify.app/'
+], 'ブラウザバージョン');
+register('EARTH（UV）', 'Webプロキシ', [
+  'beautiful-chaja-87d350.netlify.app/'
+], 'Ultravioletベース');
+register('シャドウ', 'Webプロキシ', [
+  'myshadow.blueshadows.cl/',
+  'shadow.iei---trumpet-0001.alyaf.com/',
+  'shadow.iei---trumpet-0004.alyaf.com/',
+  'shadow.iei---trumpet-0005.swift.cl/',
+  'shadow.iei---trumpet-0002.swift.cl/',
+  'shadow.iei---trumpet-0003.alyaf.com/',
+  'shdow.flugelhorn.alyaf.com/',
+  'shadow.iei---trumpet.alyaf.com/'
+], 'ゲーム強いプロキシ');
+register('inbox', 'Webプロキシ', [
+  'we.internet-slackers.us/'
+], 'マジで何でもできる');
+register('DayDream X', 'Webプロキシ', [
+  'ddx.v2.nana.rivier.com.ar/',
+  'loilo1.camdvr.org/',
+  'daydreamx.v2.iei---trumpet-0012.alyaf.com/',
+  'daydreamx.v2.iei---trumpet-0011.alyaf.com/',
+  'daydreamx.v2.iei---trumpet-0008.dinprima.ro/',
+  'daydreamx.v2.iei---trumpet-0009.dinprima.ro/',
+  'daydreamx.v2.iei---trumpet-0010.dinprima.ro/',
+  'daydreamx.v2.iei---trumpet-0006.dinprima.ro/',
+  'daydreamx.v2.iei---trumpet-0001.alyaf.com/',
+  'daydreamx.v2.iei---trumpet-0002.alyaf.com/',
+  'daydreamx.v2.iei---trumpet-0003.swift.cl/',
+  'daydreamx.v2.iei---trumpet-0004.alyaf.com/',
+  'daydreamx.v2.iei---trumpet-0005.swift.cl/',
+  'daydreamx.v2.trumpet.alyaf.com/',
+  'ddx.v2.trumpet.rinet.ai/',
+  'ddx.v2.iei---trumpet.rinet.ai/'
+], 'v2高性能プロキシ');
+register('ヘリオス', 'Webプロキシ', [
+  'helios-browser.vercel.app/'
+], '高速Heliosブラウザ');
+register('ヘリオスOS', 'Webプロキシ', [
+  'nautilus-os.vercel.app/'
+], 'Nautilus OSベース環境');
+register('インターステラー', 'Webプロキシ', [
+  'interstellar.iei---trumpet-0005.dinprima.ro/',
+  'interstellar.iei---trumpet-0006.dinprima.ro/',
+  'interstellar.trombone.swift.cl/',
+  'interstellar.iei---trumpet-0001.alyaf.com/',
+  'interstellar.iei---trumpet-0003.alyaf.com/',
+  'interstellar.iei---trumpet-0004.alyaf.com/',
+  'interstellar.iei---trumpet-0002.alyaf.com/',
+  'interstellar.cornet.alyaf.com/',
+  'interstellar.flugelhorn.alyaf.com/',
+  'interstellar.iei.swift.cl/'
+], 'プロキシの元祖');
+register('Lunar.v2', 'Webプロキシ', [
+  'Lunar.v2.iei---trumpet-0001.swift.cl',
+  'Lunar.v2.iei---trumpet-0002.swift.cl',
+  'Lunar.v2.iei---trumpet-0003.swift.cl',
+  'Lunar.v2.iei---trumpet-0004.swift.cl',
+  'Lunar.v2.iei---trumpet-0005.swift.cl'
+], 'バージョン2');
+
+// --- 検索エンジン ---
+register('SearX.space', '検索エンジン', [
+  'searx.space/'
+], '全インスタンス一覧');
+register('Mojeek', '検索エンジン', [
+  'www.mojeek.com/'
+], '独立プライバシー検索');
+register('SearX (tiekoetter)', '検索エンジン', [
+  'searx.tiekoetter.com/'
+], 'メタ検索、プライバシー重視');
+register('Gruble', '検索エンジン', [
+  'www.gruble.de/'
+], '教育向け検索');
+register('indst', '検索エンジン', [
+  'search.indst.eu/'
+], '欧州独立検索');
+register('Metager', '検索エンジン', [
+  'metager.org/'
+], 'ドイツ発メタ検索');
+
+// ---- カテゴリごとのアイコンと表示名 ----
+const categoryMeta = {
+  'YouTube':       { icon: '▶️', label: 'YouTubeプロキシ' },
+  'Webプロキシ':   { icon: '🌐', label: 'Webプロキシ' },
+  '検索エンジン':  { icon: '🔍', label: 'プライバシー検索エンジン' }
+};
+
+// ---- レンダリング ----
+const app = document.getElementById('app');
+
+// カテゴリ順
+['YouTube', 'Webプロキシ', '検索エンジン'].forEach(catKey => {
+  const sitesInCat = allSites.filter(s => s.category === catKey);
+  if (sitesInCat.length === 0) return;
+
+  const meta = categoryMeta[catKey] || { icon: '📁', label: catKey };
+
+  const section = document.createElement('div');
+  section.className = 'category';
+
+  // ヘッダー
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'category-header';
+  headerDiv.innerHTML = `<span class="icon">${meta.icon}</span><h2>${meta.label}</h2>`;
+  section.appendChild(headerDiv);
+
+  const grid = document.createElement('div');
+  grid.className = 'card-grid';
+
+  sitesInCat.forEach(site => {
+    const color = getColor(site.service);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.borderLeftColor = color;
+
+    // サービスバッジ
+    const badge = document.createElement('span');
+    badge.className = 'service-badge';
+    badge.textContent = site.service;
+    badge.style.backgroundColor = color;
+    card.appendChild(badge);
+
+    // URL
+    const urlBox = document.createElement('div');
+    urlBox.className = 'url-box';
+    const a = document.createElement('a');
+    a.href = site.url;
+    a.textContent = site.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    urlBox.appendChild(a);
+    card.appendChild(urlBox);
+
+    // 特徴
+    const feat = document.createElement('div');
+    feat.className = 'feature-text';
+    feat.innerHTML = `<span class="dot">✨</span> ${site.feature}`;
+    card.appendChild(feat);
+
+    grid.appendChild(card);
+  });
+
+  section.appendChild(grid);
+  app.appendChild(section);
+});
+</script>
+</body>
+</html>
