@@ -9,10 +9,17 @@
     },
     {
       "id": "yt-dl",
-      "title": "ytダウンローダー",
+      "title": "youtubeダウンローダー",
       "thumbnail": "https://kotonohaworks.com/free-icons/wp-content/uploads/kkrn_icon_download_1.png",
       "embedUrl": "/Tools/yt-dl/index.html",
       "description": "K-tube APIを使った高速youtubeダウンローダー"
+    },
+        {
+      "id": "Proxy list",
+      "title": "プロキシ一覧",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQhD1VltL0YCsyd3Y684mnZEF9GGBNFdXG7dfOZrL8OPg&s=10",
+      "embedUrl": "/Tools/Proxy list/index.html",
+      "description": "K-tube独自のプロキシ一覧"
     }
 
   ]
