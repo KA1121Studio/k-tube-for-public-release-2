@@ -156,7 +156,14 @@
   "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6MuIcF1_decMTE0b1p_ZspSvdmlMog03OsW-Q8Ew2zQ&s=10",
   "embedUrl": "/Games/Slope-3/index.html",
   "description": "ボールを転がそう！"
-}
+},
+        {
+  "id": "corosiam",
+  "title": "タイピングコロシアム",
+  "thumbnail": "https://typingerz.com/wp-content/uploads/2019/06/battle.png",
+  "embedUrl": "/Games/corosiam/index.html",
+  "description": "タイピングをしてモンスターを倒そう！"
+    }
     
   ]
 }
