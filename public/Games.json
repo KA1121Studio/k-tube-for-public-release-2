@@ -182,9 +182,17 @@
   "id": "POP",
   "title": "POPタイピング",
   "thumbnail": "https://shichibu.com/wp-content/uploads/2020/03/%E3%80%90Pop%E3%82%BF%E3%82%A4%E3%83%94%E3%83%B3%E3%82%B0%E3%80%91-Google-Chrome-2020_03_01-18_58_15.jpg",
-  "embedUrl": "/Games/POP/index.html",
+  "embedUrl": "/Games/POP/index.html",{
   "description": "弾けるポップコーン！"
+},
+    {
+  "id": "tinmokunohosi",
+  "title": "沈黙の星",
+  "thumbnail": "https://i.postimg.cc/MHv2Bdq2/Screenshot-2026-06-23-12-53-18.png",
+  "embedUrl": "/Games/tinmokunohosi/index.html",
+  "description": "すべてのエンデイングを集めよう！"
 }
+    
     
   ]
 }
