@@ -163,7 +163,28 @@
   "thumbnail": "https://typingerz.com/wp-content/uploads/2019/06/battle.png",
   "embedUrl": "/Games/corosiam/index.html",
   "description": "タイピングをしてモンスターを倒そう！"
-    }
+    },
+    {
+  "id": "Granny",
+  "title": "Granny",
+  "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS467bnBbKyytGC6jjyOVQVVyqlFoCcsUJDY9DWzp6j4A&s=10",
+  "embedUrl": "/Games/Granny/index.html",
+  "description": "おばあちゃんから逃げろ！"
+},
+{
+  "id": "sushida",
+  "title": "寿司打",
+  "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSnywInz1naM2uc-BbmdVQzw0ut01_mP0oSMrFH54j__w&s=10",
+  "embedUrl": "/Games/sushida/index.html",
+  "description": "タイピングで寿司を作れ！"
+},
+{
+  "id": "POP",
+  "title": "POPタイピング",
+  "thumbnail": "https://shichibu.com/wp-content/uploads/2020/03/%E3%80%90Pop%E3%82%BF%E3%82%A4%E3%83%94%E3%83%B3%E3%82%B0%E3%80%91-Google-Chrome-2020_03_01-18_58_15.jpg",
+  "embedUrl": "/Games/POP/index.html",
+  "description": "弾けるポップコーン！"
+}
     
   ]
 }
