@@ -19,7 +19,8 @@ async function loadGames() {
         <div class="thumb" data-game="${game.embedUrl}">
           <img src="${game.thumbnail}" alt="${game.title}" style="aspect-ratio:16/9; object-fit:cover;">
         </div>
-        <div class="meta">
+        <div class="meta" style="display:flex;align-items:center;gap:10px;">
+          <button class="open-tab-btn" title="新しいタブで開く">↗</button>
           <div class="info">
             <div class="title">${escapeHtml(game.title)}</div>
             <div class="sub">${escapeHtml(game.description || '')}</div>
@@ -30,6 +31,41 @@ async function loadGames() {
       card.querySelector('.thumb').addEventListener('click', () => {
         location.hash = `playgame=${encodeURIComponent(game.embedUrl)}`;
         renderGamePlay(game);
+      });
+
+      card.querySelector('.open-tab-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        const win = window.open('about:blank', '_blank');
+        if (!win) return;
+
+        win.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>${escapeHtml(game.title)}</title>
+            <style>
+              html,body{
+                margin:0;
+                width:100%;
+                height:100%;
+                overflow:hidden;
+                background:#000;
+              }
+              iframe{
+                width:100%;
+                height:100%;
+                border:none;
+              }
+            </style>
+          </head>
+          <body>
+            <iframe src="${game.embedUrl}" allowfullscreen></iframe>
+          </body>
+          </html>
+        `);
+
+        win.document.close();
       });
 
       grid.appendChild(card);
@@ -46,10 +82,8 @@ function renderGamePlay(game) {
       <iframe src="${game.embedUrl}" frameborder="0" allowfullscreen></iframe>
     </div>
   `;
-  toggleFixedSidebar(false);   
+  toggleFixedSidebar(false);
 }
-
-
 
 window.loadGames = loadGames;
 window.renderGamePlay = renderGamePlay;
