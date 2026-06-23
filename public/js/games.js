@@ -43,7 +43,7 @@ async function loadGames() {
               flex-shrink:0;
             "
           >
-            ⤢
+            ↗
           </button>
         </div>
       `;
