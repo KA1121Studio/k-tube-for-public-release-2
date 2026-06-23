@@ -33,7 +33,7 @@ async function loadGames() {
               height:42px;
               border:none;
               border-radius:12px;
-              background:linear-gradient(135deg,#4f8cff,#2563eb);
+              background:linear-gradient(135deg,#34d399,#16a34a);
               color:#fff;
               font-size:22px;
               font-weight:bold;
