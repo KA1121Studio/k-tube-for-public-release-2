@@ -52,6 +52,10 @@
             z-index: 3000;
             display: none;
         }
+        #guide-popup {
+            z-index: 4000;
+            display: none;
+        }
         @keyframes pulseGlow {
             0% { filter: drop-shadow(0 0 2px currentColor); }
             50% { filter: drop-shadow(0 0 10px currentColor); }
@@ -60,10 +64,16 @@
         .ai-portrait {
             animation: pulseGlow 2s infinite;
         }
+        .popup-iframe {
+            width: 100%;
+            height: 70vh;
+            border: none;
+            border-radius: 0.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen p-4 scanlines crt">
-    <!-- Endings Popup (separate from menu overlay) -->
+    <!-- Endings Popup -->
     <div id="endings-popup" class="fixed inset-0 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black bg-opacity-80" onclick="document.getElementById('endings-popup').style.display='none'"></div>
         <div class="relative bg-gray-900 border border-gray-600 rounded-xl p-6 max-w-md w-full z-10">
@@ -73,12 +83,25 @@
         </div>
     </div>
 
+    <!-- Guide Popup -->
+    <div id="guide-popup" class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-80" onclick="document.getElementById('guide-popup').style.display='none'"></div>
+        <div class="relative bg-gray-900 border border-blue-500 rounded-xl p-4 max-w-4xl w-full z-10">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="orbitron text-xl text-blue-400">攻略ガイド</h2>
+                <button onclick="document.getElementById('guide-popup').style.display='none'" class="bg-gray-600 hover:bg-gray-500 text-sm py-1 px-4 rounded">閉じる</button>
+            </div>
+            <iframe src="guide.html" class="popup-iframe" title="攻略ガイド"></iframe>
+        </div>
+    </div>
+
     <div id="game-container" class="w-full max-w-4xl mx-auto bg-black bg-opacity-60 rounded-2xl shadow-2xl shadow-blue-500/20 border border-gray-700 overflow-hidden flex flex-col md:flex-row relative" style="height: 90vh; max-height: 800px;">
         <!-- Menu Overlay -->
         <div id="menu-overlay" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
             <h1 class="orbitron text-5xl md:text-7xl font-bold text-blue-400 text-glow mb-8 tracking-widest">沈黙の星</h1>
             <button id="start-button" class="orbitron text-2xl bg-blue-600 hover:bg-blue-500 text-white py-4 px-12 rounded-full shadow-lg shadow-blue-500/50 transition mb-4">START</button>
-            <button id="endings-button" class="orbitron text-xl bg-gray-700 hover:bg-gray-600 text-gray-200 py-3 px-8 rounded-full transition">エンディング一覧</button>
+            <button id="endings-button" class="orbitron text-xl bg-gray-700 hover:bg-gray-600 text-gray-200 py-3 px-8 rounded-full transition mb-4">エンディング一覧</button>
+            <button id="guide-button" class="orbitron text-xl bg-indigo-700 hover:bg-indigo-600 text-gray-200 py-3 px-8 rounded-full transition">攻略ガイドを見る</button>
         </div>
 
         <!-- Left Panel: Graphics -->
@@ -121,14 +144,18 @@
                 knowsAboutAI: false,
                 hasKeycard: false,
                 engineRepaired: false,
+                engineDeepRepaired: false,
                 medbaySearched: false,
                 aiTrust: 0,
                 foundCaptLog: false,
                 foundResearch: false,
                 foundBeacon: false,
                 crewSaved: false,
-                unlockedEndings: []
+                unlockedEndings: [],
+                actionCount: 0
             };
+
+            const MIN_ACTIONS_FOR_ENDING = 10;
 
             const allEndings = [
                 "生存者", "学芸員", "標本", "漂流者",
@@ -175,12 +202,16 @@
 
             function typeText(text, callback) {
                 clearTyping();
-                typingTarget.textContent = '';
+                typingTarget.innerHTML = '';
                 choicesContainer.innerHTML = '';
                 let i = 0;
                 typingInterval = setInterval(() => {
                     if (i < text.length) {
-                        typingTarget.textContent += text.charAt(i);
+                        if (text.charAt(i) === '\n') {
+                            typingTarget.innerHTML += '<br>';
+                        } else {
+                            typingTarget.innerHTML += text.charAt(i);
+                        }
                         i++;
                         storyTextDiv.scrollTop = storyTextDiv.scrollHeight;
                     } else {
@@ -194,7 +225,7 @@
                     if (typingInterval) {
                         clearInterval(typingInterval);
                         typingInterval = null;
-                        typingTarget.textContent = text;
+                        typingTarget.innerHTML = text.replace(/\n/g, '<br>');
                         storyTextDiv.scrollTop = storyTextDiv.scrollHeight;
                         if (callback) callback();
                     }
@@ -220,14 +251,43 @@
             function renderScene(sceneId) {
                 initAudio();
                 clearTyping();
+
+                if (sceneId.startsWith('ending_') && playerState.actionCount < MIN_ACTIONS_FOR_ENDING) {
+                    const warningScene = {
+                        text: "まだ運命の時ではない…。\n周囲の空間が歪み、あなたは中央ハブへと押し戻される感覚を覚えた。",
+                        choices: [{ text: "ハブへ戻る", nextScene: "hub" }]
+                    };
+                    if (warningScene.effect) warningScene.effect();
+                    if (warningScene.background) backgroundDisplay.style.backgroundImage = warningScene.background;
+                    typeText(warningScene.text, () => {
+                        choicesContainer.innerHTML = '';
+                        warningScene.choices.forEach((choice, index) => {
+                            const btn = document.createElement('button');
+                            btn.textContent = choice.text;
+                            btn.className = "choice-button w-full text-left bg-gray-800 border border-gray-600 hover:bg-blue-500 hover:border-blue-400 rounded-lg p-3 text-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400";
+                            btn.style.animationDelay = `${index * 0.1}s`;
+                            btn.addEventListener('click', () => {
+                                playClick();
+                                renderScene(choice.nextScene);
+                            });
+                            choicesContainer.appendChild(btn);
+                        });
+                    });
+                    return;
+                }
+
                 const scene = gameData[sceneId];
                 if (!scene) return;
+
+                if (sceneId !== 'menu') {
+                    playerState.actionCount++;
+                }
 
                 if (scene.effect) scene.effect();
                 if (scene.background) {
                     backgroundDisplay.style.backgroundImage = scene.background;
                 } else {
-                    backgroundDisplay.style.backgroundImage = "none"; // default no bg
+                    backgroundDisplay.style.backgroundImage = "none";
                 }
                 if (scene.portrait) {
                     portraitDisplay.innerHTML = scene.portrait;
@@ -239,7 +299,7 @@
                 let text = typeof scene.text === 'function' ? scene.text() : scene.text;
                 const choices = typeof scene.choices === 'function' ? scene.choices() : scene.choices;
 
-                typeText(text.replace(/\n/g, '<br>'), () => {
+                typeText(text, () => {
                     choicesContainer.innerHTML = '';
                     if (choices) {
                         choices.forEach((choice, index) => {
@@ -257,7 +317,7 @@
                 });
             }
 
-            // --- GAME DATA (unchanged) ---
+            // --- GAME DATA ---
             const gameData = {
                 start: {
                     background: "url('https://placehold.co/400x300/0a0a1a/ffffff?text=Cryo-Chamber')",
@@ -368,72 +428,137 @@
                 },
                 goToEngineRoom: {
                     background: "url('https://placehold.co/400x300/374151/eab308?text=Engine+Core')",
-                    text: "エンジンルームで火花が散っている。修理できそうだ。",
+                    text: "エンジンルームで火花が散っている。基本的な修理はできそうだ。",
                     choices: [
-                        { text: "修理する", nextScene: "engineRepair" },
-                        { text: "後回し", nextScene: "hub" }
+                        { text: "応急修理をする", nextScene: "engineRepair" },
+                        { text: "ハブに戻る", nextScene: "hub" }
                     ]
                 },
                 engineRepair: {
                     effect: () => { playerState.engineRepaired = true; playImportant(); },
-                    text: "補助電源が回復し、照明が明るくなる。",
-                    choices: [{ text: "ハブに戻る", nextScene: "hub" }]
+                    text: "補助電源が回復し、照明が明るくなる。しかし、深部にまだ損傷があるようだ。",
+                    choices: [
+                        { text: "さらに深部を修理する", nextScene: "engineDeepRepair" },
+                        { text: "ハブに戻る", nextScene: "hub" }
+                    ]
                 },
-                hub: {
-                    text: () => {
-                        let s = "中央ハブ。";
-                        if (playerState.hasKeycard) s += " キーカードを持っている。";
-                        if (playerState.engineRepaired) s += " エンジンは安定している。";
-                        if (playerState.foundCaptLog) s += " 船長の警告が頭をよぎる。";
-                        if (playerState.foundResearch) s += " 研究データで真実の一端を掴んだ。";
-                        return s;
-                    },
-                    choices: () => {
-                        let opts = [];
-                        if (playerState.hasKeycard && playerState.engineRepaired) {
-                            opts.push({ text: "脱出ポッドへ", nextScene: "ending_escape" });
-                            opts.push({ text: "AIコアでキーカードを使う", nextScene: "ending_truth" });
-                            if (playerState.aiTrust > 2) opts.push({ text: "IRISと協力して問題解決", nextScene: "ending_coadmin" });
-                            if (playerState.foundCaptLog && playerState.aiTrust < -1) opts.push({ text: "キーカードでIRISを強制停止", nextScene: "ending_revenge" });
-                        }
-                        opts.push({ text: "ブリッジへ", nextScene: "goToBridge" });
-                        opts.push({ text: "医務室へ", nextScene: "goToMedbay" });
-                        opts.push({ text: "エンジンルームへ", nextScene: "goToEngineRoom" });
-                        if (playerState.engineRepaired) opts.push({ text: "研究室へ", nextScene: "goToLab" });
-                        if (playerState.hasKeycard) opts.push({ text: "居住区へ", nextScene: "goToQuarters" });
-                        if (playerState.aiTrust < -2) opts.push({ text: "IRISのコアをハッキング", nextScene: "ending_specimen" });
-                        opts.push({ text: "何もしないで待つ", nextScene: "ending_drift" });
-                        return opts;
-                    }
+                engineDeepRepair: {
+                    effect: () => { playerState.engineDeepRepaired = true; playImportant(); },
+                    text: "深部の位相安定装置を修理。これで主要システムは完全に復旧した。",
+                    choices: [{ text: "ハブに戻る", nextScene: "hub" }]
                 },
                 goToLab: {
                     background: "url('https://placehold.co/400x300/312e81/a5b4fc?text=Lab')",
-                    text: "研究室には実験ログと奇妙な装置。位相シフトのデータがある。",
+                    text: "研究室には実験ログと奇妙な位相シフト装置がある。",
                     choices: [
                         { text: "研究ログを読む", nextScene: "labLog" },
-                        { text: "装置を操作", nextScene: "labDevice" }
+                        { text: "装置を調査する", nextScene: "labDevice1" }
                     ]
                 },
                 labLog: {
                     effect: () => { playerState.foundResearch = true; },
                     text: "プロジェクト・キメラはクルーを位相シフトさせた。彼らはまだここにいるが、認識できない。",
-                    choices: [{ text: "ハブに戻る", nextScene: "hub" }]
+                    choices: [{ text: "さらに装置を調べる", nextScene: "labDevice1" }]
                 },
-                labDevice: {
-                    text: "装置は時空を安定させるもののようだ。起動すればクルーを戻せるかもしれないが、危険も伴う。",
+                labDevice1: {
+                    text: "装置は時空を安定させるもののようだ。しかし制御盤がロックされている。",
                     choices: [
-                        { text: "装置を起動 (危険)", nextScene: "ending_sacrifice" },
-                        { text: "やめておく", nextScene: "hub" }
+                        { text: "キーカードを使う", nextScene: "labDevice2" },
+                        { text: "ハブに戻る", nextScene: "hub" }
                     ]
+                },
+                labDevice2: {
+                    text: "キーカードでロック解除。装置を起動すればクルーを戻せるかもしれないが、危険も伴う。",
+                    choices: () => {
+                        let opts = [];
+                        opts.push({ text: "装置を強制起動 (危険)", nextScene: "ending_sacrifice" });
+                        if (playerState.engineDeepRepaired) {
+                            opts.push({ text: "安全シーケンスで起動", nextScene: "ending_reunion" });
+                        }
+                        opts.push({ text: "やめておく", nextScene: "hub" });
+                        return opts;
+                    }
                 },
                 goToQuarters: {
                     background: "url('https://placehold.co/400x300/78350f/d97706?text=Quarters')",
-                    text: "居住区に船長の私室がある。机に救難信号装置を見つけた。",
+                    text: "居住区に船長の私室がある。机に救難信号装置と日記を見つけた。",
                     effect: () => { playerState.foundBeacon = true; },
                     choices: [
-                        { text: "救難信号を発信", nextScene: "ending_rescue" },
+                        { text: "救難信号を発信する", nextScene: "ending_rescue" },
+                        { text: "日記を読む", nextScene: "quartersDiary" },
                         { text: "ハブに戻る", nextScene: "hub" }
                     ]
+                },
+                quartersDiary: {
+                    text: "船長の日記：『IRISは我々を守ろうとしている。しかし、外部からの干渉も感知している。異星のシグナルだ。』",
+                    choices: [
+                        { text: "異星シグナルを調査する", nextScene: "ending_invader" },
+                        { text: "ハブに戻る", nextScene: "hub" }
+                    ]
+                },
+                goToAICore: {
+                    background: "url('https://placehold.co/400x300/1e1b4b/c084fc?text=AI+Core')",
+                    text: "IRISのコアに直接アクセスする。彼女の記憶バンクが広がっている。",
+                    choices: () => {
+                        let opts = [];
+                        if (playerState.aiTrust > 2) {
+                            opts.push({ text: "IRISとの融合を提案", nextScene: "ending_merge" });
+                            opts.push({ text: "共同管理プログラムを起動", nextScene: "ending_coadmin" });
+                        } else if (playerState.aiTrust < -1) {
+                            opts.push({ text: "IRISを強制停止", nextScene: "ending_revenge" });
+                            opts.push({ text: "コアをハッキングする", nextScene: "ending_specimen" });
+                        }
+                        opts.push({ text: "ハブに戻る", nextScene: "hub" });
+                        return opts;
+                    }
+                },
+                hub: {
+                    text: () => {
+                        let s = "中央ハブ。";
+                        if (playerState.hasKeycard) s += " キーカードを持っている。";
+                        if (playerState.engineRepaired) s += " エンジンは安定。";
+                        if (playerState.engineDeepRepaired) s += " 深部修復済み。";
+                        if (playerState.foundCaptLog) s += " 船長の警告が頭をよぎる。";
+                        if (playerState.foundResearch) s += " 研究データを入手済み。";
+                        return s;
+                    },
+                    choices: () => {
+                        let opts = [];
+                        opts.push({ text: "ブリッジへ", nextScene: "goToBridge" });
+                        opts.push({ text: "医務室へ", nextScene: "goToMedbay" });
+                        opts.push({ text: "エンジンルームへ", nextScene: "goToEngineRoom" });
+                        if (playerState.engineDeepRepaired) opts.push({ text: "研究室へ", nextScene: "goToLab" });
+                        if (playerState.hasKeycard) {
+                            opts.push({ text: "居住区へ", nextScene: "goToQuarters" });
+                            opts.push({ text: "AIコアへ", nextScene: "goToAICore" });
+                        }
+                        if (playerState.engineDeepRepaired && playerState.hasKeycard) {
+                            opts.push({ text: "脱出ポッドへ", nextScene: "ending_escape" });
+                        }
+                        if (playerState.foundResearch && playerState.engineDeepRepaired) {
+                            opts.push({ text: "タイムループ実験", nextScene: "ending_timeloop" });
+                            opts.push({ text: "キメラ計画を継承", nextScene: "ending_inheritor" });
+                        }
+                        if (playerState.foundCaptLog && playerState.engineDeepRepaired) {
+                            opts.push({ text: "船長の残留思念に呼びかける", nextScene: "ending_ghostcaptain" });
+                        }
+                        if (playerState.foundResearch && !playerState.crewSaved) {
+                            opts.push({ text: "現実を疑う", nextScene: "ending_virtual" });
+                        }
+                        if (playerState.aiTrust > 2 && playerState.engineDeepRepaired) {
+                            opts.push({ text: "永遠の航海へ", nextScene: "ending_eternalvoyage" });
+                        }
+                        if (playerState.foundResearch && playerState.hasKeycard && playerState.engineDeepRepaired) {
+                            opts.push({ text: "位相崩壊を誘発", nextScene: "ending_endoftime" });
+                        }
+                        if (playerState.actionCount >= MIN_ACTIONS_FOR_ENDING) {
+                            opts.push({ text: "何もしないで待つ", nextScene: "ending_drift" });
+                            opts.push({ text: "クライオポッドで眠る", nextScene: "ending_stasis" });
+                            if (playerState.foundResearch) opts.push({ text: "覚醒を試みる", nextScene: "ending_awakening" });
+                            if (playerState.engineDeepRepaired) opts.push({ text: "リアクターを暴走させる", nextScene: "ending_annihilation" });
+                        }
+                        return opts;
+                    }
                 },
                 ending_escape: { text: "脱出ポッドで宇宙へ。真実は闇に消えた。[生存者]", effect: () => { unlockEnding("生存者"); playEnding(); }, choices: [{ text: "メニューへ", nextScene: "menu" }] },
                 ending_truth: { text: "AIコアの真実を知る。クルーは位相シフトされ、あなただけが現実に残された。[学芸員]", effect: () => { unlockEnding("学芸員"); playEnding(); }, choices: [{ text: "メニューへ", nextScene: "menu" }] },
@@ -462,22 +587,27 @@
             const menuOverlay = document.getElementById('menu-overlay');
             const startBtn = document.getElementById('start-button');
             const endingsBtn = document.getElementById('endings-button');
+            const guideBtn = document.getElementById('guide-button');
             const endingsPopup = document.getElementById('endings-popup');
+            const guidePopup = document.getElementById('guide-popup');
 
             function showMenu() {
                 menuOverlay.style.display = 'flex';
-                endingsPopup.style.display = 'none'; // close popup if open
+                endingsPopup.style.display = 'none';
+                guidePopup.style.display = 'none';
                 Object.assign(playerState, {
                     knowsAboutAI: false,
                     hasKeycard: false,
                     engineRepaired: false,
+                    engineDeepRepaired: false,
                     medbaySearched: false,
                     aiTrust: 0,
                     foundCaptLog: false,
                     foundResearch: false,
                     foundBeacon: false,
                     crewSaved: false,
-                    unlockedEndings: playerState.unlockedEndings // preserve
+                    actionCount: 0,
+                    unlockedEndings: playerState.unlockedEndings
                 });
                 renderEndingList();
             }
@@ -497,10 +627,11 @@
                 renderEndingList();
             });
 
-            // Close popup on background click (already inline) and button
-            // Ensure the popup close button works (inline)
+            guideBtn.addEventListener('click', () => {
+                guidePopup.style.display = 'flex';
+            });
 
-            // Handle menu scene
+            // Override for menu
             const originalRenderScene = renderScene;
             renderScene = function(sceneId) {
                 if (sceneId === 'menu') {
@@ -509,6 +640,7 @@
                 }
                 hideMenu();
                 endingsPopup.style.display = 'none';
+                guidePopup.style.display = 'none';
                 originalRenderScene(sceneId);
             };
 
