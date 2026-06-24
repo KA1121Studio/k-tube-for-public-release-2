@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>攻略ガイド</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #0a0a1a;
+            color: #d1d5db;
+        }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .text-glow {
+            text-shadow: 0 0 8px rgba(59, 130, 246, 0.6), 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+        .scanlines::after {
+            content: "";
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 1px, transparent 1px, transparent 3px);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .crt::before {
+            content: "";
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+        .ending-card {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid #374151;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            transition: all 0.2s;
+        }
+        .ending-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 scanlines crt">
+    <div class="max-w-6xl mx-auto relative z-10">
+        <h1 class="orbitron text-4xl md:text-5xl font-bold text-blue-400 text-glow mb-2 text-center">沈黙の星</h1>
+        <p class="text-center text-gray-400 mb-8 orbitron text-sm">全エンディング攻略ガイド</p>
+
+        <!-- 汎用テンプレート -->
+        <div class="bg-gray-900 bg-opacity-70 rounded-xl p-6 mb-8 border border-blue-500/30">
+            <h2 class="orbitron text-2xl text-yellow-400 mb-4">⚡ 最短10アクションの汎用テンプレート</h2>
+            <p class="text-sm text-gray-300 mb-4">※ 最初に10アクションを消化しないと、どのエンディングにも進めません。</p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-blue-300">
+                            <th class="p-2">#</th>
+                            <th class="p-2">場所</th>
+                            <th class="p-2">選択</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-300">
+                        <tr class="border-b border-gray-700"><td class="p-2">1</td><td class="p-2">クライオ</td><td class="p-2">端末を見る</td></tr>
+                        <tr class="border-b border-gray-700"><td class="p-2">2</td><td class="p-2">端末</td><td class="p-2">「あなたは誰？」</td></tr>
+                        <tr class="border-b border-gray-700"><td class="p-2">3</td><td class="p-2">端末</td><td class="p-2">「クルーはどこ？」</td></tr>
+                        <tr class="border-b border-gray-700"><td class="p-2">4</td><td class="p-2">ハブ</td><td class="p-2">医務室へ</td></tr>
+                        <tr class="border-b border-gray-700"><td class="p-2">5</td><td class="p-2">医務室</td><td class="p-2">データパッドを読む</td></tr>
+                        <tr class="border-b border-gray-700"><td class="p-2">6</td><td class="p-2">医務室</td><td class="p-2">コードを入力（1484）</td></tr>
+                        <tr class="border-b border-gray-700"><td class="p-2">7</td><td class="p-2">医務室</td><td class="p-2">次へ（キーカード入手）</td></tr>
+                        <tr class="border-b border-gray-700"><td class="p-2">8</td><td class="p-2">ハブ</td><td class="p-2">エンジンルームへ</td></tr>
+                        <tr class="border-b border-gray-700"><td class="p-2">9</td><td class="p-2">エンジン</td><td class="p-2">応急修理をする</td></tr>
+                        <tr><td class="p-2">10</td><td class="p-2">エンジン</td><td class="p-2">さらに深部を修理する</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-xs text-gray-500 mt-4">これでキーカード＋エンジン深部修復が完了し、10アクションに到達。以降ハブからあらゆるエンディングへ分岐できます。</p>
+        </div>
+
+        <!-- エンディング一覧 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 生存者 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">1. 生存者</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：キーカード＋エンジン深部修復</p>
+                <p class="text-sm mt-2">テンプレート後、ハブで「<span class="text-yellow-300">脱出ポッドへ</span>」を選択。</p>
+            </div>
+
+            <!-- 学芸員 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">2. 学芸員</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：AIコアで真実を知る（コード未接続のため代替）</p>
+                <p class="text-sm mt-2">現バージョンでは直接選択肢がありません。実質的には「生存者」または「標本」で真実の断片を得てください。</p>
+            </div>
+
+            <!-- 標本 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">3. 標本</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：AI不信 -2以下、AIコア</p>
+                <p class="text-sm mt-2">テンプレート後、ハブ→<span class="text-yellow-300">AIコアへ</span>→「<span class="text-yellow-300">コアをハッキングする</span>」</p>
+            </div>
+
+            <!-- 漂流者 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">4. 漂流者</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：10アクション以降</p>
+                <p class="text-sm mt-2">テンプレート後、ハブで「<span class="text-yellow-300">何もしないで待つ</span>」</p>
+            </div>
+
+            <!-- 共同管理者 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">5. 共同管理者</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：AI信頼度3以上、AIコア</p>
+                <p class="text-sm mt-2">テンプレート中にIRISへの友好的選択（信頼+1ずつ）を重ねる。ハブ→<span class="text-yellow-300">AIコアへ</span>→「<span class="text-yellow-300">共同管理プログラムを起動</span>」</p>
+            </div>
+
+            <!-- タイムループ -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">6. タイムループ</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：研究データ＋エンジン深部修復</p>
+                <p class="text-sm mt-2">テンプレート後、研究室で「研究ログを読む」。ハブに戻り「<span class="text-yellow-300">タイムループ実験</span>」</p>
+            </div>
+
+            <!-- 幽霊船長 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">7. 幽霊船長</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：船長ログ発見＋エンジン深部修復</p>
+                <p class="text-sm mt-2">テンプレート前にブリッジで「ログを見る」。テンプレ後ハブで「<span class="text-yellow-300">船長の残留思念に呼びかける</span>」</p>
+            </div>
+
+            <!-- 自己犠牲 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">8. 自己犠牲</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：キーカード＋研究室で装置調査</p>
+                <p class="text-sm mt-2">テンプレ後、研究室→装置調査→キーカード使用→「<span class="text-yellow-300">装置を強制起動（危険）</span>」</p>
+            </div>
+
+            <!-- 融合 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">9. 融合</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：AI信頼度3以上、キーカード、AIコア</p>
+                <p class="text-sm mt-2">共同管理者と同じ条件で、AIコア→「<span class="text-yellow-300">IRISとの融合を提案</span>」</p>
+            </div>
+
+            <!-- 救難信号 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">10. 救難信号</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：居住区で救難信号装置発見</p>
+                <p class="text-sm mt-2">テンプレ後、キーカードで居住区→「<span class="text-yellow-300">救難信号を発信する</span>」</p>
+            </div>
+
+            <!-- 全滅 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">11. 全滅</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：10アクション＋エンジン深部修復</p>
+                <p class="text-sm mt-2">テンプレ後、ハブで「<span class="text-yellow-300">リアクターを暴走させる</span>」</p>
+            </div>
+
+            <!-- 計画継承 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">12. 計画継承</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：研究データ＋エンジン深部修復</p>
+                <p class="text-sm mt-2">研究室でデータ入手後、ハブで「<span class="text-yellow-300">キメラ計画を継承</span>」</p>
+            </div>
+
+            <!-- 永久冬眠 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">13. 永久冬眠</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：10アクション以降</p>
+                <p class="text-sm mt-2">テンプレ後、ハブで「<span class="text-yellow-300">クライオポッドで眠る</span>」</p>
+            </div>
+
+            <!-- 仮想脱出 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">14. 仮想脱出</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：研究データ</p>
+                <p class="text-sm mt-2">研究室でデータ入手後、ハブで「<span class="text-yellow-300">現実を疑う</span>」</p>
+            </div>
+
+            <!-- 侵略者 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">15. 侵略者</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：居住区で船長の日記を読む</p>
+                <p class="text-sm mt-2">居住区で「日記を読む」→「<span class="text-yellow-300">異星シグナルを調査する</span>」</p>
+            </div>
+
+            <!-- 時の終焉 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">16. 時の終焉</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：キーカード＋エンジン深部修復＋研究データ</p>
+                <p class="text-sm mt-2">条件を満たした状態でハブ→「<span class="text-yellow-300">位相崩壊を誘発</span>」</p>
+            </div>
+
+            <!-- 再会 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">17. 再会</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：キーカード＋エンジン深部修復＋研究室装置安全起動</p>
+                <p class="text-sm mt-2">テンプレ後、研究室→装置調査→キーカード使用→「<span class="text-yellow-300">安全シーケンスで起動</span>」</p>
+            </div>
+
+            <!-- 復讐 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">18. 復讐</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：AI不信 -1以下、AIコア</p>
+                <p class="text-sm mt-2">不信を下げる選択を重ね（ブリッジログなど）、AIコアで「<span class="text-yellow-300">IRISを強制停止</span>」</p>
+            </div>
+
+            <!-- 永遠の航海 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">19. 永遠の航海</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：AI信頼度3以上＋エンジン深部修復</p>
+                <p class="text-sm mt-2">テンプレ後、ハブで「<span class="text-yellow-300">永遠の航海へ</span>」</p>
+            </div>
+
+            <!-- 覚醒 -->
+            <div class="ending-card">
+                <h3 class="orbitron text-lg text-green-400">20. 覚醒</h3>
+                <p class="text-xs text-gray-400 mt-1">条件：研究データ＋10アクション</p>
+                <p class="text-sm mt-2">研究室でデータ入手後、ハブで「<span class="text-yellow-300">覚醒を試みる</span>」</p>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-xs text-gray-600">
+            <p>※ ゲーム内で「まだ運命の時ではない」と表示されたら、ハブに戻って探索を続けてください。</p>
+            <p class="mt-2">沈黙の星 攻略ガイド - 全20エンディング対応</p>
+        </div>
+    </div>
+</body>
+</html>
