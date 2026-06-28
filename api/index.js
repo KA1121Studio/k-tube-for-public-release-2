@@ -5,6 +5,8 @@ import path from "path";
 import { execSync } from "child_process";   
 import jwt from 'jsonwebtoken';
 
+import 'dotenv/config';
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
