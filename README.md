@@ -74,3 +74,14 @@ npm start
 ご質問や不具合報告などがありましたら、以下までご連絡ください。
 
 https://scratch.mit.edu/users/I-love-Proxy/
+
+---
+
+<div align="center">
+
+### K-tube™
+
+© 2024-2026 <a href="https://github.com/KA1121Studio">KA1121Studio</a>
+All rights reserved.
+
+</div>
