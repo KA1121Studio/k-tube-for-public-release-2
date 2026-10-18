@@ -10,8 +10,8 @@ import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+  'https://hrbnspsmvlnlndkrfeij.supabase.co',
+  'sb_publishable_7H3Y61-DO70Z4SKU2Dvgrg_UST3d5iF'
 );
 
 
